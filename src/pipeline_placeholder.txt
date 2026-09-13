@@ -1,0 +1,2 @@
+The orchestration is intentionally kept in src/main.py so the project has a single
+document-to-ERP entry point.
