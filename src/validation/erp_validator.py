@@ -44,6 +44,7 @@ class ERPValidator:
         "book",
         "book_payable",
         "process",
+        "erp_book",
     )
 
     def __init__(

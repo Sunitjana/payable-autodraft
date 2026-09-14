@@ -155,6 +155,9 @@ class OCRExtractor:
         hf_token: str = "",
         native_min_length: int = 30,
         ocr_confidence_threshold: float = 0.90,
+        tesseract_enabled: bool = True,
+        tesseract_lang: str = "eng",
+        tesseract_psm: int = 6,
     ) -> None:
 
         self.paddle_enabled = bool(
@@ -195,6 +198,10 @@ class OCRExtractor:
         )
 
         # Critical-document quality threshold.
+        self.tesseract_enabled = bool(tesseract_enabled)
+        self.tesseract_lang = tesseract_lang or "eng"
+        self.tesseract_psm = int(tesseract_psm)
+
         self.ocr_confidence_threshold = max(
             0.0,
             min(
@@ -452,6 +459,40 @@ class OCRExtractor:
                 pass
 
         return {}
+
+    def _tesseract_extract(self, image: Path, psm: Optional[int] = None) -> dict[str, Any]:
+        """Fast local OCR safety net; never loaded unless needed."""
+        if not self.tesseract_enabled:
+            return {"success": False, "text": "", "error": "disabled"}
+        try:
+            import pytesseract
+            from PIL import Image
+            with Image.open(image) as img:
+                # L mode reduces memory and is sufficient for document text.
+                if img.mode not in ("L", "RGB"):
+                    img = img.convert("RGB")
+                text = pytesseract.image_to_string(
+                    img,
+                    lang=self.tesseract_lang,
+                    config=f"--oem 1 --psm {int(psm if psm is not None else self.tesseract_psm)}",
+                    timeout=2.5,
+                ) or ""
+            return {
+                "success": bool(text.strip()),
+                "text": text.strip(),
+                "confidence": None,
+                "confidence_available": False,
+                "source": "tesseract",
+            }
+        except Exception as exc:
+            logger.warning("Tesseract fallback failed: %s", exc)
+            return {"success": False, "text": "", "error": str(exc), "source": "tesseract"}
+
+    def tesseract_extract(self, image_path: str | Path, psm: Optional[int] = None) -> dict[str, Any]:
+        image=Path(image_path)
+        if not image.exists():
+            return {"success": False, "text": "", "error": "image not found"}
+        return self._tesseract_extract(image, psm=psm)
 
     # ============================================================
     # NATIVE TEXT QUALITY
@@ -946,6 +987,28 @@ class OCRExtractor:
                         "good": False,
                         "error": str(exc),
                     }
+
+        # ========================================================
+        # STEP 3.75 — LIGHTWEIGHT LOCAL OCR FALLBACK
+        # ========================================================
+        # Used before the heavyweight Unlimited-OCR path when Paddle did not
+        # return usable text. It is intentionally lazy and page-local.
+        if image is not None and image.exists() and self.tesseract_enabled and not result.success:
+            tess = self._tesseract_extract(image)
+            tess_text = str(tess.get("text") or "").strip()
+            if tess_text:
+                tess_quality = self._assess_paddle(tess_text, None)
+                result.text = tess_text
+                result.source = "tesseract"
+                result.confidence = float(tess_quality.get("score", 0.0) or 0.0)
+                result.success = True
+                result.evidence = {
+                    "native": {"text": native_text, "quality": native_quality},
+                    "paddle": {"text": result.paddle_text, "quality": result.paddle_quality},
+                    "tesseract": {"text": tess_text, "quality": tess_quality},
+                    "unlimited": {"text": result.unlimited_text, "quality": result.unlimited_quality},
+                }
+                return result
 
         # ========================================================
         # STEP 3 — UNLIMITED-OCR FALLBACK

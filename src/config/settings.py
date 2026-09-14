@@ -5,10 +5,10 @@ Configuration is loaded from:
     .env
 
 Main OCR stack:
-    1. PyMuPDF native PDF text
-    2. PaddleOCR-VL v1.6
-    3. Unlimited-OCR fallback
-    4. Qwen3-VL supervisor
+    1. pypdf native PDF text
+    2. PaddleOCR-VL v1.6 (scanned pages only)
+    3. Tesseract safety fallback
+    4. Optional Unlimited-OCR / Qwen3-VL rescue
 """
 
 from __future__ import annotations
@@ -86,9 +86,18 @@ MAX_PAGES = int(
 OCR_DPI = int(
     os.getenv(
         "OCR_DPI",
-        "200",
+        "180",
     )
 )
+
+# Low-cost page triage render. Only pages that look payable are re-rendered
+# at OCR_DPI for detailed extraction. This is the main CPU optimization.
+TRIAGE_DPI = int(os.getenv("TRIAGE_DPI", "72"))
+
+# Maximum number of pages deeply OCRed from the beginning of a scanned PDF.
+# The supplied bundles put the primary payable document first; later pages are
+# commonly attachments/transport notes. Set to 3 for CPU-safe processing.
+DEEP_PAGE_WINDOW = int(os.getenv("DEEP_PAGE_WINDOW", "2"))
 
 MIN_TEXT_LENGTH = int(
     os.getenv(
@@ -96,6 +105,13 @@ MIN_TEXT_LENGTH = int(
         "30",
     )
 )
+
+# Lightweight local OCR fallback. It is used only when PaddleOCR/Unlimited-OCR
+# are unavailable or fail. This keeps CPU/Kaggle runs recoverable.
+TESSERACT_ENABLED = os.getenv("TESSERACT_ENABLED", "true").lower() == "true"
+TESSERACT_LANG = os.getenv("TESSERACT_LANG", "eng")
+TESSERACT_PSM = int(os.getenv("TESSERACT_PSM", "6"))
+TESSERACT_ALT_PSM = int(os.getenv("TESSERACT_ALT_PSM", "11"))
 
 
 # ============================================================
@@ -105,7 +121,7 @@ MIN_TEXT_LENGTH = int(
 PADDLE_ENABLED = (
     os.getenv(
         "PADDLE_ENABLED",
-        "true",
+        "false",
     ).lower()
     == "true"
 )
@@ -140,7 +156,7 @@ OCR_CONFIDENCE_THRESHOLD = float(
 UNLIMITED_OCR_ENABLED = (
     os.getenv(
         "UNLIMITED_OCR_ENABLED",
-        "true",
+        "false",
     ).lower()
     == "true"
 )
@@ -362,10 +378,16 @@ def get_config() -> dict:
         "max_pages": MAX_PAGES,
 
         "ocr_dpi": OCR_DPI,
+        "triage_dpi": TRIAGE_DPI,
+        "deep_page_window": DEEP_PAGE_WINDOW,
 
         "min_text_length": (
             MIN_TEXT_LENGTH
         ),
+
+        "tesseract_enabled": TESSERACT_ENABLED,
+        "tesseract_lang": TESSERACT_LANG,
+        "tesseract_psm": TESSERACT_PSM,
 
         # Primary OCR
         "paddle_enabled": (
