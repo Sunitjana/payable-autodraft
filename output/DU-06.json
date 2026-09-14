@@ -1,0 +1,66 @@
+{
+  "file": "DU-06.pdf",
+  "payables": [
+    {
+      "invoice_number": "05/80906935",
+      "invoice_date": "",
+      "due_date": "",
+      "invoice_type": "INVOICE",
+      "currency": "EUR",
+      "supplier": {
+        "supplier_id": "",
+        "name": "",
+        "vat_id": "785255159",
+        "address": ""
+      },
+      "buyer": {
+        "company_code": "",
+        "business_unit_code": "",
+        "location_code": ""
+      },
+      "payment_term_id": "",
+      "po_number": "",
+      "po_id": "",
+      "gross_total": "153.58",
+      "subtotal": "138.20",
+      "total_tax_amount": "15.38",
+      "discount_amount": "",
+      "freight_charges": "",
+      "insurance_charges": "",
+      "extra_charges": "",
+      "excise_duties": "",
+      "taxes": [
+        {
+          "tax_type": "VAT",
+          "tax_name": "IVA",
+          "tax_rate": "23",
+          "tax_amount": "9.59",
+          "tax_type_code": "PT_230_IVA"
+        },
+        {
+          "tax_type": "VAT",
+          "tax_name": "IVA",
+          "tax_rate": "6",
+          "tax_amount": "5.79",
+          "tax_type_code": "PT_060_IVA"
+        }
+      ],
+      "line_items": [
+        {
+          "description": "Invoice goods subtotal",
+          "item_type": "GOODS",
+          "uom": "",
+          "quantity": "1",
+          "unit_price": "138.20",
+          "total": "138.20",
+          "discount": "",
+          "discount_percentage": "",
+          "tax_rate": "",
+          "tax_amount": "",
+          "taxes": []
+        }
+      ]
+    }
+  ],
+  "declined": []
+}

@@ -1,0 +1,56 @@
+{
+  "file": "INV-25.pdf",
+  "elapsed_s": 10.642,
+  "ocr_errors": [],
+  "groups": [
+    {
+      "document_index": 1,
+      "pages": [
+        1,
+        2
+      ],
+      "classification": {
+        "document_type": "invoice",
+        "confidence": 0.8700000000000001,
+        "evidence": [
+          "factura"
+        ],
+        "scores": {
+          "invoice": 8.0,
+          "credit_memo": 1.5,
+          "non_payable": 0.0,
+          "financial": 3.0
+        }
+      },
+      "payable_decision": {
+        "is_payable": true,
+        "confidence": 0.8700000000000001,
+        "document_type": "invoice",
+        "reason": "Invoice identity established.",
+        "evidence": [
+          "factura"
+        ]
+      },
+      "ocr_sources": [
+        "tesseract",
+        "tesseract"
+      ],
+      "status": "REVIEW",
+      "builder": {
+        "success": false,
+        "payload": null,
+        "errors": [
+          "Invoice number is missing."
+        ],
+        "warnings": [
+          "Invoice date is missing.",
+          "Supplier could not be reliably matched; supplier_id will remain blank.",
+          "PO could not be reliably matched; po_id will remain blank.",
+          "Payment terms could not be reliably matched; payment_term_id will remain blank.",
+          "Buyer/chart-of-books mapping could not be reliably matched; unmatched codes remain blank."
+        ]
+      }
+    }
+  ],
+  "payable_count": 0
+}

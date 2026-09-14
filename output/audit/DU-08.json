@@ -1,0 +1,21 @@
+{
+  "file": "DU-08.pdf",
+  "status": "DECLINED",
+  "ocr_errors": [],
+  "classification": {
+    "document_type": "non_payable",
+    "confidence": 0.99,
+    "evidence": [
+      "rechnun",
+      "rechnung",
+      "mahnung"
+    ],
+    "scores": {
+      "invoice": 12.0,
+      "credit_memo": 1.0,
+      "non_payable": 10.0,
+      "financial": 2.0
+    }
+  },
+  "elapsed_s": 2.598
+}

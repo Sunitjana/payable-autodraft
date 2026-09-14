@@ -1,0 +1,19 @@
+{
+  "file": "DU-05s.pdf",
+  "status": "DECLINED",
+  "ocr_errors": [],
+  "classification": {
+    "document_type": "non_payable",
+    "confidence": 0.9166666666666667,
+    "evidence": [
+      "delivery note"
+    ],
+    "scores": {
+      "invoice": 2.0,
+      "credit_memo": 1.0,
+      "non_payable": 8.0,
+      "financial": 2.0
+    }
+  },
+  "elapsed_s": 1.728
+}

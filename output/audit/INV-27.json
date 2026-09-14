@@ -1,0 +1,36 @@
+{
+  "file": "INV-27.pdf",
+  "elapsed_s": 3.133,
+  "ocr_errors": [],
+  "groups": [
+    {
+      "document_index": 1,
+      "pages": [
+        2
+      ],
+      "classification": {
+        "document_type": "unknown",
+        "confidence": 0.3,
+        "evidence": [],
+        "scores": {
+          "invoice": 4.0,
+          "credit_memo": 2.0,
+          "non_payable": 0.0,
+          "financial": 4.0
+        }
+      },
+      "payable_decision": {
+        "is_payable": false,
+        "confidence": 0.3,
+        "document_type": "unknown",
+        "reason": "Payable identity could not be established safely.",
+        "evidence": []
+      },
+      "ocr_sources": [
+        "tesseract"
+      ],
+      "status": "DECLINED"
+    }
+  ],
+  "payable_count": 0
+}

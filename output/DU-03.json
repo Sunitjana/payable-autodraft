@@ -1,0 +1,190 @@
+{
+  "file": "DU-03.pdf",
+  "payables": [
+    {
+      "invoice_number": "539775",
+      "invoice_date": "",
+      "due_date": "",
+      "invoice_type": "INVOICE",
+      "currency": "USD",
+      "supplier": {
+        "supplier_id": "",
+        "name": "",
+        "vat_id": "",
+        "address": ""
+      },
+      "buyer": {
+        "company_code": "",
+        "business_unit_code": "",
+        "location_code": ""
+      },
+      "payment_term_id": "Net_60",
+      "po_number": "",
+      "po_id": "",
+      "gross_total": "1040.06",
+      "subtotal": "",
+      "total_tax_amount": "0.00",
+      "discount_amount": "",
+      "freight_charges": "",
+      "insurance_charges": "",
+      "extra_charges": "",
+      "excise_duties": "",
+      "taxes": [
+        {
+          "tax_type": "TAX",
+          "tax_name": "TAX",
+          "tax_rate": "0.00",
+          "tax_amount": "0.00",
+          "tax_type_code": "SG_000_GST"
+        },
+        {
+          "tax_type": "TAX",
+          "tax_name": "TAX",
+          "tax_rate": "0.00",
+          "tax_amount": "0.00",
+          "tax_type_code": "SG_000_GST"
+        },
+        {
+          "tax_type": "TAX",
+          "tax_name": "TAX",
+          "tax_rate": "0.00",
+          "tax_amount": "0.00",
+          "tax_type_code": "SG_000_GST"
+        }
+      ],
+      "line_items": [
+        {
+          "description": "International Freight KG USD .00000",
+          "item_type": "GOODS",
+          "uom": "",
+          "quantity": "725.76",
+          "unit_price": "1.00",
+          "total": "725.76",
+          "discount": "",
+          "discount_percentage": "",
+          "tax_rate": "",
+          "tax_amount": "",
+          "taxes": []
+        },
+        {
+          "description": "Origin Terminal Handling KG USD .00000",
+          "item_type": "GOODS",
+          "uom": "",
+          "quantity": "56.70",
+          "unit_price": "1.00",
+          "total": "56.70",
+          "discount": "",
+          "discount_percentage": "",
+          "tax_rate": "",
+          "tax_amount": "",
+          "taxes": []
+        },
+        {
+          "description": "Documentation EA USD .00000",
+          "item_type": "GOODS",
+          "uom": "",
+          "quantity": "45.00",
+          "unit_price": "1.00",
+          "total": "45.00",
+          "discount": "",
+          "discount_percentage": "",
+          "tax_rate": "",
+          "tax_amount": "",
+          "taxes": []
+        },
+        {
+          "description": "Delivery KG USD .00000",
+          "item_type": "GOODS",
+          "uom": "",
+          "quantity": "22.68",
+          "unit_price": "1.00",
+          "total": "22.68",
+          "discount": "",
+          "discount_percentage": "",
+          "tax_rate": "",
+          "tax_amount": "",
+          "taxes": []
+        },
+        {
+          "description": "Pick-up KG USD .00000",
+          "item_type": "GOODS",
+          "uom": "",
+          "quantity": "102.06",
+          "unit_price": "1.00",
+          "total": "102.06",
+          "discount": "",
+          "discount_percentage": "",
+          "tax_rate": "",
+          "tax_amount": "",
+          "taxes": []
+        },
+        {
+          "description": "Export",
+          "item_type": "GOODS",
+          "uom": "",
+          "quantity": "7.50",
+          "unit_price": "1.00",
+          "total": "7.50",
+          "discount": "",
+          "discount_percentage": "",
+          "tax_rate": "",
+          "tax_amount": "",
+          "taxes": []
+        },
+        {
+          "description": "Origin Documentation EA USD .00000",
+          "item_type": "GOODS",
+          "uom": "",
+          "quantity": "15.00",
+          "unit_price": "1.00",
+          "total": "15.00",
+          "discount": "",
+          "discount_percentage": "",
+          "tax_rate": "",
+          "tax_amount": "",
+          "taxes": []
+        },
+        {
+          "description": "Import",
+          "item_type": "GOODS",
+          "uom": "",
+          "quantity": "15.00",
+          "unit_price": "1.00",
+          "total": "15.00",
+          "discount": "",
+          "discount_percentage": "",
+          "tax_rate": "",
+          "tax_amount": "",
+          "taxes": []
+        },
+        {
+          "description": "Carrier Manifest Filing EA USD .00000",
+          "item_type": "GOODS",
+          "uom": "",
+          "quantity": "5.00",
+          "unit_price": "1.00",
+          "total": "5.00",
+          "discount": "",
+          "discount_percentage": "",
+          "tax_rate": "",
+          "tax_amount": "",
+          "taxes": []
+        },
+        {
+          "description": "Handling ————$_——",
+          "item_type": "GOODS",
+          "uom": "",
+          "quantity": "45.36",
+          "unit_price": "1.00",
+          "total": "45.36",
+          "discount": "",
+          "discount_percentage": "",
+          "tax_rate": "",
+          "tax_amount": "",
+          "taxes": []
+        }
+      ]
+    }
+  ],
+  "declined": []
+}

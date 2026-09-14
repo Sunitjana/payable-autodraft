@@ -1,0 +1,59 @@
+{
+  "file": "HLD-01.pdf",
+  "payables": [
+    {
+      "invoice_number": "16675/02/467",
+      "invoice_date": "2026-05-05",
+      "due_date": "",
+      "invoice_type": "INVOICE",
+      "currency": "THB",
+      "supplier": {
+        "supplier_id": "",
+        "name": "",
+        "vat_id": "",
+        "address": ""
+      },
+      "buyer": {
+        "company_code": "",
+        "business_unit_code": "",
+        "location_code": ""
+      },
+      "payment_term_id": "",
+      "po_number": "",
+      "po_id": "",
+      "gross_total": "8397.36",
+      "subtotal": "",
+      "total_tax_amount": "549.36",
+      "discount_amount": "",
+      "freight_charges": "",
+      "insurance_charges": "",
+      "extra_charges": "648.00",
+      "excise_duties": "",
+      "taxes": [
+        {
+          "tax_type": "VAT",
+          "tax_name": "VAT",
+          "tax_rate": "7",
+          "tax_amount": "549.36",
+          "tax_type_code": "TH_070_VAT"
+        }
+      ],
+      "line_items": [
+        {
+          "description": "Staff 2 Units X 6 Days",
+          "item_type": "SERVICE",
+          "uom": "Day",
+          "quantity": "12",
+          "unit_price": "600.00",
+          "total": "7200.00",
+          "discount": "",
+          "discount_percentage": "",
+          "tax_rate": "",
+          "tax_amount": "",
+          "taxes": []
+        }
+      ]
+    }
+  ],
+  "declined": []
+}

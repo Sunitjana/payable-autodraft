@@ -1,0 +1,51 @@
+{
+  "file": "INV-34.pdf",
+  "payables": [
+    {
+      "invoice_number": "I220-127612",
+      "invoice_date": "2015-06-27",
+      "due_date": "2015-06-27",
+      "invoice_type": "INVOICE",
+      "currency": "ZAR",
+      "supplier": {
+        "supplier_id": "",
+        "name": "",
+        "vat_id": "",
+        "address": ""
+      },
+      "buyer": {
+        "company_code": "",
+        "business_unit_code": "",
+        "location_code": ""
+      },
+      "payment_term_id": "",
+      "po_number": "",
+      "po_id": "",
+      "gross_total": "572.00",
+      "subtotal": "",
+      "total_tax_amount": "",
+      "discount_amount": "",
+      "freight_charges": "",
+      "insurance_charges": "",
+      "extra_charges": "",
+      "excise_duties": "",
+      "taxes": [],
+      "line_items": [
+        {
+          "description": "Document total (aggregate line recovery)",
+          "item_type": "GOODS",
+          "uom": "EA",
+          "quantity": "1",
+          "unit_price": "572.00",
+          "total": "572.00",
+          "discount": "",
+          "discount_percentage": "",
+          "tax_rate": "",
+          "tax_amount": "",
+          "taxes": []
+        }
+      ]
+    }
+  ],
+  "declined": []
+}

@@ -1,0 +1,113 @@
+{
+  "file": "INV-16.pdf",
+  "elapsed_s": 6.054,
+  "ocr_errors": [],
+  "groups": [
+    {
+      "document_index": 1,
+      "pages": [
+        1,
+        2
+      ],
+      "classification": {
+        "document_type": "invoice",
+        "confidence": 0.99,
+        "evidence": [
+          "arve",
+          "arve number",
+          "arve kuupaev"
+        ],
+        "scores": {
+          "invoice": 17.0,
+          "credit_memo": 2.0,
+          "non_payable": 0.0,
+          "financial": 4.0
+        }
+      },
+      "payable_decision": {
+        "is_payable": true,
+        "confidence": 0.99,
+        "document_type": "invoice",
+        "reason": "Invoice identity established.",
+        "evidence": [
+          "arve",
+          "arve number",
+          "arve kuupaev"
+        ]
+      },
+      "ocr_sources": [
+        "tesseract",
+        "tesseract"
+      ],
+      "validation": {
+        "master": {
+          "valid": true,
+          "supplier_valid": true,
+          "po_valid": true,
+          "taxes_valid": true,
+          "payment_terms_valid": true,
+          "account_valid": true,
+          "errors": [],
+          "warnings": [
+            "supplier_id is unresolved/blank; this is permitted by the challenge.",
+            "payment_term_id is unresolved/blank.",
+            "buyer.company_code is unresolved/blank.",
+            "buyer.business_unit_code is unresolved/blank.",
+            "buyer.location_code is unresolved/blank."
+          ]
+        },
+        "financial": {
+          "valid": false,
+          "calculated_subtotal": "1.00",
+          "calculated_tax": "0.00",
+          "calculated_discount": "0.00",
+          "calculated_charges": "2.83",
+          "calculated_gross": "3.83",
+          "document_gross": "26.47",
+          "errors": [
+            "gross_total mismatch: document=26.47, calculated=3.83."
+          ],
+          "warnings": [
+            "subtotal is not provided; cannot compare.",
+            "total_tax_amount is not provided; cannot compare.",
+            "discount_amount is not provided; cannot compare."
+          ]
+        },
+        "schema": {
+          "valid": false,
+          "errors": [
+            "gross_total mismatch: document=26.47, calculated=3.83."
+          ],
+          "warnings": [
+            "payable.subtotal is empty.",
+            "payable.total_tax_amount is empty.",
+            "payable.discount_amount is empty.",
+            "payable.freight_charges is empty.",
+            "payable.insurance_charges is empty.",
+            "payable.excise_duties is empty.",
+            "subtotal is not provided; cannot compare.",
+            "total_tax_amount is not provided; cannot compare.",
+            "discount_amount is not provided; cannot compare."
+          ]
+        },
+        "erp": {
+          "valid": false,
+          "erp_available": true,
+          "document_gross": "26.47",
+          "erp_gross": "3.83",
+          "erp_result": {
+            "will_book_gross": 3.83,
+            "currency": "EUR"
+          },
+          "errors": [
+            "ERP gross amount does not match document gross_total: document=26.47, erp=3.83, difference=22.64, tolerance=0.01."
+          ],
+          "warnings": []
+        }
+      },
+      "supervisor": null,
+      "status": "REVIEW"
+    }
+  ],
+  "payable_count": 0
+}

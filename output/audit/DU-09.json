@@ -1,0 +1,23 @@
+{
+  "file": "DU-09.pdf",
+  "status": "DECLINED",
+  "ocr_errors": [],
+  "classification": {
+    "document_type": "non_payable",
+    "confidence": 0.99,
+    "evidence": [
+      "donations and charitable contributions",
+      "charitable contributions",
+      "sponsorship",
+      "contribution",
+      "donation"
+    ],
+    "scores": {
+      "invoice": 2.0,
+      "credit_memo": 1.0,
+      "non_payable": 44.0,
+      "financial": 2.0
+    }
+  },
+  "elapsed_s": 3.068
+}

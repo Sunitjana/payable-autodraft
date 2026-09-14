@@ -1,0 +1,45 @@
+{
+  "file": "INV-11.pdf",
+  "payables": [
+    {
+      "invoice_number": "FJ19363",
+      "invoice_date": "2026-04-07",
+      "due_date": "2026-04-28",
+      "invoice_type": "INVOICE",
+      "currency": "EUR",
+      "supplier": {
+        "supplier_id": "",
+        "name": "",
+        "vat_id": "EE063536009",
+        "address": ""
+      },
+      "buyer": {
+        "company_code": "",
+        "business_unit_code": "",
+        "location_code": ""
+      },
+      "payment_term_id": "",
+      "po_number": "",
+      "po_id": "",
+      "gross_total": "67.10",
+      "subtotal": "",
+      "total_tax_amount": "67.10",
+      "discount_amount": "",
+      "freight_charges": "",
+      "insurance_charges": "",
+      "extra_charges": "",
+      "excise_duties": "",
+      "taxes": [
+        {
+          "tax_type": "VAT",
+          "tax_name": "VAT",
+          "tax_rate": "24.00",
+          "tax_amount": "67.10",
+          "tax_type_code": "EST_240_VAT"
+        }
+      ],
+      "line_items": []
+    }
+  ],
+  "declined": []
+}

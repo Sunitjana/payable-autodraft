@@ -1,0 +1,59 @@
+{
+  "file": "HLD-08.pdf",
+  "payables": [
+    {
+      "invoice_number": "162547",
+      "invoice_date": "2026-05-19",
+      "due_date": "",
+      "invoice_type": "INVOICE",
+      "currency": "ZAR",
+      "supplier": {
+        "supplier_id": "",
+        "name": "",
+        "vat_id": "2731114415",
+        "address": ""
+      },
+      "buyer": {
+        "company_code": "",
+        "business_unit_code": "",
+        "location_code": ""
+      },
+      "payment_term_id": "",
+      "po_number": "",
+      "po_id": "",
+      "gross_total": "148941.47",
+      "subtotal": "129514.32",
+      "total_tax_amount": "19427.15",
+      "discount_amount": "",
+      "freight_charges": "",
+      "insurance_charges": "",
+      "extra_charges": "",
+      "excise_duties": "",
+      "taxes": [
+        {
+          "tax_type": "VAT",
+          "tax_name": "VAT",
+          "tax_rate": "15",
+          "tax_amount": "19427.15",
+          "tax_type_code": "ZAF_150_VAT"
+        }
+      ],
+      "line_items": [
+        {
+          "description": "Hall's Smooth Fruit Punch 1lt M 337521",
+          "item_type": "GOODS",
+          "uom": "",
+          "quantity": "1",
+          "unit_price": "129514.32",
+          "total": "129514.32",
+          "discount": "",
+          "discount_percentage": "",
+          "tax_rate": "",
+          "tax_amount": "",
+          "taxes": []
+        }
+      ]
+    }
+  ],
+  "declined": []
+}

@@ -1,0 +1,51 @@
+{
+  "file": "INV-33.pdf",
+  "payables": [
+    {
+      "invoice_number": "ADIPL/INV/070/17",
+      "invoice_date": "",
+      "due_date": "",
+      "invoice_type": "INVOICE",
+      "currency": "INR",
+      "supplier": {
+        "supplier_id": "",
+        "name": "",
+        "vat_id": "",
+        "address": ""
+      },
+      "buyer": {
+        "company_code": "",
+        "business_unit_code": "",
+        "location_code": ""
+      },
+      "payment_term_id": "",
+      "po_number": "Invoice",
+      "po_id": "",
+      "gross_total": "250.00",
+      "subtotal": "",
+      "total_tax_amount": "",
+      "discount_amount": "",
+      "freight_charges": "",
+      "insurance_charges": "",
+      "extra_charges": "",
+      "excise_duties": "",
+      "taxes": [],
+      "line_items": [
+        {
+          "description": "Document total (aggregate line recovery)",
+          "item_type": "GOODS",
+          "uom": "EA",
+          "quantity": "1",
+          "unit_price": "250.00",
+          "total": "250.00",
+          "discount": "",
+          "discount_percentage": "",
+          "tax_rate": "",
+          "tax_amount": "",
+          "taxes": []
+        }
+      ]
+    }
+  ],
+  "declined": []
+}

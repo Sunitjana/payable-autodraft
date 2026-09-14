@@ -1,0 +1,59 @@
+{
+  "file": "INV-36.pdf",
+  "elapsed_s": 0.025,
+  "ocr_errors": [],
+  "groups": [
+    {
+      "document_index": 1,
+      "pages": [
+        1
+      ],
+      "classification": {
+        "document_type": "invoice",
+        "confidence": 0.99,
+        "evidence": [
+          "invoice",
+          "invoi",
+          "invoice number",
+          "invoice date"
+        ],
+        "scores": {
+          "invoice": 21.5,
+          "credit_memo": 3.5,
+          "non_payable": 0.0,
+          "financial": 7.0
+        }
+      },
+      "payable_decision": {
+        "is_payable": true,
+        "confidence": 0.99,
+        "document_type": "invoice",
+        "reason": "Invoice identity established.",
+        "evidence": [
+          "invoice",
+          "invoi",
+          "invoice number",
+          "invoice date"
+        ]
+      },
+      "ocr_sources": [
+        "native-pdf"
+      ],
+      "status": "REVIEW",
+      "builder": {
+        "success": false,
+        "payload": null,
+        "errors": [
+          "Gross total is missing."
+        ],
+        "warnings": [
+          "Invoice date is missing.",
+          "Supplier could not be reliably matched; supplier_id will remain blank.",
+          "PO could not be reliably matched; po_id will remain blank.",
+          "Buyer/chart-of-books mapping could not be reliably matched; unmatched codes remain blank."
+        ]
+      }
+    }
+  ],
+  "payable_count": 0
+}

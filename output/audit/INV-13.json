@@ -1,0 +1,53 @@
+{
+  "file": "INV-13.pdf",
+  "elapsed_s": 6.29,
+  "ocr_errors": [],
+  "groups": [
+    {
+      "document_index": 1,
+      "pages": [
+        1
+      ],
+      "classification": {
+        "document_type": "invoice",
+        "confidence": 0.75,
+        "evidence": [
+          "arve"
+        ],
+        "scores": {
+          "invoice": 5.0,
+          "credit_memo": 0.5,
+          "non_payable": 0.0,
+          "financial": 1.0
+        }
+      },
+      "payable_decision": {
+        "is_payable": true,
+        "confidence": 0.75,
+        "document_type": "invoice",
+        "reason": "Invoice identity established.",
+        "evidence": [
+          "arve"
+        ]
+      },
+      "ocr_sources": [
+        "tesseract"
+      ],
+      "status": "REVIEW",
+      "builder": {
+        "success": false,
+        "payload": null,
+        "errors": [
+          "Invoice number is missing."
+        ],
+        "warnings": [
+          "Supplier could not be reliably matched; supplier_id will remain blank.",
+          "PO could not be reliably matched; po_id will remain blank.",
+          "Payment terms could not be reliably matched; payment_term_id will remain blank.",
+          "Buyer/chart-of-books mapping could not be reliably matched; unmatched codes remain blank."
+        ]
+      }
+    }
+  ],
+  "payable_count": 0
+}

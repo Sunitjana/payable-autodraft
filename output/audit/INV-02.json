@@ -1,0 +1,99 @@
+{
+  "file": "INV-02.pdf",
+  "elapsed_s": 5.108,
+  "ocr_errors": [],
+  "groups": [
+    {
+      "document_index": 1,
+      "pages": [
+        1,
+        2
+      ],
+      "classification": {
+        "document_type": "invoice",
+        "confidence": 0.99,
+        "evidence": [
+          "arve",
+          "arve number"
+        ],
+        "scores": {
+          "invoice": 11.0,
+          "credit_memo": 1.0,
+          "non_payable": 0.0,
+          "financial": 2.0
+        }
+      },
+      "payable_decision": {
+        "is_payable": true,
+        "confidence": 0.99,
+        "document_type": "invoice",
+        "reason": "Invoice identity established.",
+        "evidence": [
+          "arve",
+          "arve number"
+        ]
+      },
+      "ocr_sources": [
+        "tesseract",
+        "tesseract"
+      ],
+      "validation": {
+        "master": {
+          "valid": true,
+          "supplier_valid": true,
+          "po_valid": true,
+          "taxes_valid": true,
+          "payment_terms_valid": true,
+          "account_valid": true,
+          "errors": [],
+          "warnings": [
+            "supplier_id is unresolved/blank; this is permitted by the challenge.",
+            "buyer.company_code is unresolved/blank.",
+            "buyer.business_unit_code is unresolved/blank.",
+            "buyer.location_code is unresolved/blank."
+          ]
+        },
+        "financial": {
+          "valid": true,
+          "calculated_subtotal": "562.60",
+          "calculated_tax": "93.72",
+          "calculated_discount": "48.09",
+          "calculated_charges": "0.00",
+          "calculated_gross": "608.23",
+          "document_gross": "608.23",
+          "errors": [],
+          "warnings": [
+            "subtotal is not provided; cannot compare."
+          ]
+        },
+        "schema": {
+          "valid": true,
+          "errors": [],
+          "warnings": [
+            "payable.subtotal is empty.",
+            "payable.freight_charges is empty.",
+            "payable.insurance_charges is empty.",
+            "payable.extra_charges is empty.",
+            "payable.excise_duties is empty.",
+            "subtotal is not provided; cannot compare."
+          ]
+        },
+        "erp": {
+          "valid": true,
+          "erp_available": true,
+          "document_gross": "608.23",
+          "erp_gross": "608.23",
+          "erp_result": {
+            "will_book_gross": 608.23,
+            "currency": "EUR"
+          },
+          "errors": [],
+          "warnings": []
+        }
+      },
+      "supervisor": null,
+      "status": "ACCEPTED"
+    }
+  ],
+  "payable_count": 1
+}

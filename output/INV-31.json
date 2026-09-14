@@ -1,0 +1,51 @@
+{
+  "file": "INV-31.pdf",
+  "payables": [
+    {
+      "invoice_number": "45271-3847",
+      "invoice_date": "",
+      "due_date": "",
+      "invoice_type": "INVOICE",
+      "currency": "USD",
+      "supplier": {
+        "supplier_id": "",
+        "name": "",
+        "vat_id": "",
+        "address": ""
+      },
+      "buyer": {
+        "company_code": "",
+        "business_unit_code": "",
+        "location_code": ""
+      },
+      "payment_term_id": "",
+      "po_number": "713847",
+      "po_id": "",
+      "gross_total": "17657.53",
+      "subtotal": "",
+      "total_tax_amount": "",
+      "discount_amount": "",
+      "freight_charges": "",
+      "insurance_charges": "",
+      "extra_charges": "",
+      "excise_duties": "",
+      "taxes": [],
+      "line_items": [
+        {
+          "description": "Document total (aggregate line recovery)",
+          "item_type": "GOODS",
+          "uom": "EA",
+          "quantity": "1",
+          "unit_price": "17657.53",
+          "total": "17657.53",
+          "discount": "",
+          "discount_percentage": "",
+          "tax_rate": "",
+          "tax_amount": "",
+          "taxes": []
+        }
+      ]
+    }
+  ],
+  "declined": []
+}

@@ -1,0 +1,10 @@
+{
+  "file": "DU-08.pdf",
+  "payables": [],
+  "declined": [
+    {
+      "doc_type": "non_payable",
+      "reason": "Document is not a payable."
+    }
+  ]
+}

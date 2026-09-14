@@ -1,0 +1,109 @@
+{
+  "file": "INV-37.pdf",
+  "elapsed_s": 0.096,
+  "ocr_errors": [],
+  "groups": [
+    {
+      "document_index": 1,
+      "pages": [
+        1
+      ],
+      "classification": {
+        "document_type": "invoice",
+        "confidence": 0.99,
+        "evidence": [
+          "invoice",
+          "invoi",
+          "invoice date",
+          "purchase order"
+        ],
+        "scores": {
+          "invoice": 12.5,
+          "credit_memo": 1.0,
+          "non_payable": 8.0,
+          "financial": 2.0
+        }
+      },
+      "payable_decision": {
+        "is_payable": true,
+        "confidence": 0.99,
+        "document_type": "invoice",
+        "reason": "Invoice identity established.",
+        "evidence": [
+          "invoice",
+          "invoi",
+          "invoice date",
+          "purchase order"
+        ]
+      },
+      "ocr_sources": [
+        "native-pdf"
+      ],
+      "validation": {
+        "master": {
+          "valid": true,
+          "supplier_valid": true,
+          "po_valid": true,
+          "taxes_valid": true,
+          "payment_terms_valid": true,
+          "account_valid": true,
+          "errors": [],
+          "warnings": [
+            "supplier_id is unresolved/blank; this is permitted by the challenge.",
+            "PO number is present but no ERP PO match was established.",
+            "payment_term_id is unresolved/blank.",
+            "buyer.company_code is unresolved/blank.",
+            "buyer.business_unit_code is unresolved/blank.",
+            "buyer.location_code is unresolved/blank."
+          ]
+        },
+        "financial": {
+          "valid": true,
+          "calculated_subtotal": "7.32",
+          "calculated_tax": "0.00",
+          "calculated_discount": "0.00",
+          "calculated_charges": "0.00",
+          "calculated_gross": "7.32",
+          "document_gross": "7.32",
+          "errors": [],
+          "warnings": [
+            "subtotal is not provided; cannot compare.",
+            "total_tax_amount is not provided; cannot compare.",
+            "discount_amount is not provided; cannot compare."
+          ]
+        },
+        "schema": {
+          "valid": true,
+          "errors": [],
+          "warnings": [
+            "payable.subtotal is empty.",
+            "payable.total_tax_amount is empty.",
+            "payable.discount_amount is empty.",
+            "payable.freight_charges is empty.",
+            "payable.insurance_charges is empty.",
+            "payable.extra_charges is empty.",
+            "payable.excise_duties is empty.",
+            "subtotal is not provided; cannot compare.",
+            "total_tax_amount is not provided; cannot compare.",
+            "discount_amount is not provided; cannot compare."
+          ]
+        },
+        "erp": {
+          "valid": true,
+          "erp_available": true,
+          "document_gross": "7.32",
+          "erp_gross": "7.32",
+          "erp_result": {
+            "will_book_gross": 7.32,
+            "currency": "USD"
+          },
+          "errors": [],
+          "warnings": []
+        }
+      },
+      "supervisor": null,
+      "status": "ACCEPTED"
+    }
+  ],
+  "payable_count": 1
+}

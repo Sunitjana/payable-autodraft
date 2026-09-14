@@ -1,24 +1,19 @@
-# Core PDF / document processing
-PyMuPDF>=1.24.0
+# Payable Auto-Draft — dependencies for the fixed CPU-first src
+# Tested environment included Python 3.13.
 
-# Configuration
-python-dotenv>=1.0.0
+# Core / required
+pypdf>=6.18,<7
+pypdfium2>=5.13,<6
+pytesseract>=0.3.13,<0.4
+Pillow>=12.0,<13
+python-dotenv>=1.2,<2
+jsonschema>=4.26,<5
 
-# Primary OCR: PaddleOCR-VL
-paddleocr>=2.9.0
-paddlepaddle>=2.6.0
+# Optional OCR stack (used only when enabled in .env)
+paddleocr>=3.7,<4
+paddlepaddle>=3.3,<4
 
-# Unlimited-OCR fallback + Qwen3-VL supervisor
-torch>=2.2.0
-transformers>=4.44.0
-huggingface_hub>=0.24.0
-accelerate>=0.33.0
-
-# Required by baidu/Unlimited-OCR's remote modeling code
-# (transformers trust_remote_code pulls these in at load time)
-addict>=2.4.0
-matplotlib>=3.8.0
-
-# Numeric support used across OCR/extraction backends
-numpy>=1.26.0
-Pillow>=10.0.0
+# Optional Transformer / Qwen supervisor and Unlimited-OCR stack
+# Keep disabled by default on CPU unless the required models are available.
+torch>=2.14,<3
+transformers>=5.17,<6

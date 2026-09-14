@@ -1,0 +1,108 @@
+{
+  "file": "INV-21.pdf",
+  "elapsed_s": 4.789,
+  "ocr_errors": [],
+  "groups": [
+    {
+      "document_index": 1,
+      "pages": [
+        1
+      ],
+      "classification": {
+        "document_type": "invoice",
+        "confidence": 0.99,
+        "evidence": [
+          "fatura",
+          "factura",
+          "data de vencimento"
+        ],
+        "scores": {
+          "invoice": 14.0,
+          "credit_memo": 0.5,
+          "non_payable": 0.0,
+          "financial": 1.0
+        }
+      },
+      "payable_decision": {
+        "is_payable": true,
+        "confidence": 0.99,
+        "document_type": "invoice",
+        "reason": "Invoice identity established.",
+        "evidence": [
+          "fatura",
+          "factura",
+          "data de vencimento"
+        ]
+      },
+      "ocr_sources": [
+        "tesseract"
+      ],
+      "validation": {
+        "master": {
+          "valid": true,
+          "supplier_valid": true,
+          "po_valid": true,
+          "taxes_valid": true,
+          "payment_terms_valid": true,
+          "account_valid": true,
+          "errors": [],
+          "warnings": [
+            "supplier_id is unresolved/blank; this is permitted by the challenge.",
+            "buyer.company_code is unresolved/blank.",
+            "buyer.business_unit_code is unresolved/blank.",
+            "buyer.location_code is unresolved/blank."
+          ]
+        },
+        "financial": {
+          "valid": false,
+          "calculated_subtotal": "27.28",
+          "calculated_tax": "0.00",
+          "calculated_discount": "441.21",
+          "calculated_charges": "0.00",
+          "calculated_gross": "-413.93",
+          "document_gross": "535.79",
+          "errors": [
+            "gross_total mismatch: document=535.79, calculated=-413.93."
+          ],
+          "warnings": [
+            "subtotal is not provided; cannot compare.",
+            "total_tax_amount is not provided; cannot compare."
+          ]
+        },
+        "schema": {
+          "valid": false,
+          "errors": [
+            "gross_total mismatch: document=535.79, calculated=-413.93."
+          ],
+          "warnings": [
+            "payable.subtotal is empty.",
+            "payable.total_tax_amount is empty.",
+            "payable.freight_charges is empty.",
+            "payable.insurance_charges is empty.",
+            "payable.extra_charges is empty.",
+            "payable.excise_duties is empty.",
+            "subtotal is not provided; cannot compare.",
+            "total_tax_amount is not provided; cannot compare."
+          ]
+        },
+        "erp": {
+          "valid": false,
+          "erp_available": true,
+          "document_gross": "535.79",
+          "erp_gross": "-413.93",
+          "erp_result": {
+            "will_book_gross": -413.93,
+            "currency": "EUR"
+          },
+          "errors": [
+            "ERP gross amount does not match document gross_total: document=535.79, erp=-413.93, difference=949.72, tolerance=0.01."
+          ],
+          "warnings": []
+        }
+      },
+      "supervisor": null,
+      "status": "REVIEW"
+    }
+  ],
+  "payable_count": 0
+}

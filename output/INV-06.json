@@ -1,0 +1,59 @@
+{
+  "file": "INV-06.pdf",
+  "payables": [
+    {
+      "invoice_number": "8527907727",
+      "invoice_date": "2025-04-07",
+      "due_date": "",
+      "invoice_type": "INVOICE",
+      "currency": "ZAR",
+      "supplier": {
+        "supplier_id": "",
+        "name": "",
+        "vat_id": "",
+        "address": ""
+      },
+      "buyer": {
+        "company_code": "",
+        "business_unit_code": "",
+        "location_code": ""
+      },
+      "payment_term_id": "",
+      "po_number": "",
+      "po_id": "",
+      "gross_total": "1683.98",
+      "subtotal": "",
+      "total_tax_amount": "169.83",
+      "discount_amount": "",
+      "freight_charges": "",
+      "insurance_charges": "",
+      "extra_charges": "50.00",
+      "excise_duties": "",
+      "taxes": [
+        {
+          "tax_type": "VAT",
+          "tax_name": "VAT",
+          "tax_rate": "",
+          "tax_amount": "169.83",
+          "tax_type_code": ""
+        }
+      ],
+      "line_items": [
+        {
+          "description": "Invoice goods subtotal (net)",
+          "item_type": "GOODS",
+          "uom": "",
+          "quantity": "1",
+          "unit_price": "1464.15",
+          "total": "1464.15",
+          "discount": "",
+          "discount_percentage": "",
+          "tax_rate": "",
+          "tax_amount": "",
+          "taxes": []
+        }
+      ]
+    }
+  ],
+  "declined": []
+}

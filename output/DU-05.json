@@ -1,0 +1,51 @@
+{
+  "file": "DU-05.pdf",
+  "payables": [
+    {
+      "invoice_number": "7363916",
+      "invoice_date": "2026-06-30",
+      "due_date": "2026-09-28",
+      "invoice_type": "INVOICE",
+      "currency": "SGD",
+      "supplier": {
+        "supplier_id": "",
+        "name": "",
+        "vat_id": "",
+        "address": ""
+      },
+      "buyer": {
+        "company_code": "",
+        "business_unit_code": "",
+        "location_code": ""
+      },
+      "payment_term_id": "Net_90",
+      "po_number": "",
+      "po_id": "",
+      "gross_total": "771.66",
+      "subtotal": "",
+      "total_tax_amount": "",
+      "discount_amount": "",
+      "freight_charges": "",
+      "insurance_charges": "",
+      "extra_charges": "",
+      "excise_duties": "",
+      "taxes": [],
+      "line_items": [
+        {
+          "description": "Invoice item",
+          "item_type": "GOODS",
+          "uom": "PC",
+          "quantity": "1",
+          "unit_price": "771.66",
+          "total": "771.66",
+          "discount": "",
+          "discount_percentage": "",
+          "tax_rate": "",
+          "tax_amount": "",
+          "taxes": []
+        }
+      ]
+    }
+  ],
+  "declined": []
+}

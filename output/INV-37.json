@@ -1,0 +1,51 @@
+{
+  "file": "INV-37.pdf",
+  "payables": [
+    {
+      "invoice_number": "13662",
+      "invoice_date": "2018-12-06",
+      "due_date": "",
+      "invoice_type": "INVOICE",
+      "currency": "USD",
+      "supplier": {
+        "supplier_id": "",
+        "name": "",
+        "vat_id": "",
+        "address": ""
+      },
+      "buyer": {
+        "company_code": "",
+        "business_unit_code": "",
+        "location_code": ""
+      },
+      "payment_term_id": "",
+      "po_number": "13662",
+      "po_id": "",
+      "gross_total": "7.32",
+      "subtotal": "",
+      "total_tax_amount": "",
+      "discount_amount": "",
+      "freight_charges": "",
+      "insurance_charges": "",
+      "extra_charges": "",
+      "excise_duties": "",
+      "taxes": [],
+      "line_items": [
+        {
+          "description": "Purchase Order:",
+          "item_type": "SERVICE",
+          "uom": "",
+          "quantity": "0.06",
+          "unit_price": "122.00",
+          "total": "7.02",
+          "discount": "",
+          "discount_percentage": "",
+          "tax_rate": "",
+          "tax_amount": "",
+          "taxes": []
+        }
+      ]
+    }
+  ],
+  "declined": []
+}
