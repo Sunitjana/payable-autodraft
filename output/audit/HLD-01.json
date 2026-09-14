@@ -1,6 +1,6 @@
 {
   "file": "HLD-01.pdf",
-  "elapsed_s": 4.065,
+  "elapsed_s": 4.57,
   "ocr_errors": [],
   "groups": [
     {
@@ -13,14 +13,13 @@
         "confidence": 0.99,
         "evidence": [
           "invoice",
-          "invoi",
-          "arve"
+          "invoi"
         ],
         "scores": {
-          "invoice": 18.0,
-          "credit_memo": 3.25,
+          "invoice": 13.0,
+          "credit_memo": 2.75,
           "non_payable": 0.0,
-          "financial": 6.5
+          "financial": 5.5
         }
       },
       "payable_decision": {
@@ -30,8 +29,7 @@
         "reason": "Invoice identity established.",
         "evidence": [
           "invoice",
-          "invoi",
-          "arve"
+          "invoi"
         ]
       },
       "ocr_sources": [

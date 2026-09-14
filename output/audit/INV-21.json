@@ -1,6 +1,6 @@
 {
   "file": "INV-21.pdf",
-  "elapsed_s": 4.789,
+  "elapsed_s": 5.328,
   "ocr_errors": [],
   "groups": [
     {
@@ -48,6 +48,7 @@
           "errors": [],
           "warnings": [
             "supplier_id is unresolved/blank; this is permitted by the challenge.",
+            "payment_term_id is unresolved/blank.",
             "buyer.company_code is unresolved/blank.",
             "buyer.business_unit_code is unresolved/blank.",
             "buyer.location_code is unresolved/blank."
@@ -55,14 +56,14 @@
         },
         "financial": {
           "valid": false,
-          "calculated_subtotal": "27.28",
+          "calculated_subtotal": "426.25",
           "calculated_tax": "0.00",
           "calculated_discount": "441.21",
           "calculated_charges": "0.00",
-          "calculated_gross": "-413.93",
+          "calculated_gross": "-14.96",
           "document_gross": "535.79",
           "errors": [
-            "gross_total mismatch: document=535.79, calculated=-413.93."
+            "gross_total mismatch: document=535.79, calculated=-14.96."
           ],
           "warnings": [
             "subtotal is not provided; cannot compare.",
@@ -72,7 +73,7 @@
         "schema": {
           "valid": false,
           "errors": [
-            "gross_total mismatch: document=535.79, calculated=-413.93."
+            "gross_total mismatch: document=535.79, calculated=-14.96."
           ],
           "warnings": [
             "payable.subtotal is empty.",
@@ -89,13 +90,13 @@
           "valid": false,
           "erp_available": true,
           "document_gross": "535.79",
-          "erp_gross": "-413.93",
+          "erp_gross": "-14.96",
           "erp_result": {
-            "will_book_gross": -413.93,
+            "will_book_gross": -14.96,
             "currency": "EUR"
           },
           "errors": [
-            "ERP gross amount does not match document gross_total: document=535.79, erp=-413.93, difference=949.72, tolerance=0.01."
+            "ERP gross amount does not match document gross_total: document=535.79, erp=-14.96, difference=550.75, tolerance=0.01."
           ],
           "warnings": []
         }

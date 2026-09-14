@@ -1,6 +1,6 @@
 {
   "file": "HLD-03.pdf",
-  "elapsed_s": 3.545,
+  "elapsed_s": 3.46,
   "ocr_errors": [],
   "groups": [
     {
@@ -17,10 +17,10 @@
           "data de vencimento"
         ],
         "scores": {
-          "invoice": 15.0,
-          "credit_memo": 1.0,
+          "invoice": 16.0,
+          "credit_memo": 1.5,
           "non_payable": 0.0,
-          "financial": 2.0
+          "financial": 3.0
         }
       },
       "payable_decision": {
@@ -47,7 +47,6 @@
         "warnings": [
           "Supplier could not be reliably matched; supplier_id will remain blank.",
           "PO could not be reliably matched; po_id will remain blank.",
-          "Payment terms could not be reliably matched; payment_term_id will remain blank.",
           "Buyer/chart-of-books mapping could not be reliably matched; unmatched codes remain blank."
         ]
       }

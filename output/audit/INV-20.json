@@ -1,6 +1,6 @@
 {
   "file": "INV-20.pdf",
-  "elapsed_s": 8.264,
+  "elapsed_s": 9.501,
   "ocr_errors": [],
   "groups": [
     {
@@ -59,22 +59,26 @@
           ]
         },
         "financial": {
-          "valid": true,
-          "calculated_subtotal": "0.00",
-          "calculated_tax": "12.10",
+          "valid": false,
+          "calculated_subtotal": "26.00",
+          "calculated_tax": "0.91",
           "calculated_discount": "0.00",
           "calculated_charges": "0.00",
-          "calculated_gross": "12.10",
+          "calculated_gross": "26.91",
           "document_gross": "12.10",
-          "errors": [],
+          "errors": [
+            "gross_total mismatch: document=12.10, calculated=26.91."
+          ],
           "warnings": [
             "subtotal is not provided; cannot compare.",
             "discount_amount is not provided; cannot compare."
           ]
         },
         "schema": {
-          "valid": true,
-          "errors": [],
+          "valid": false,
+          "errors": [
+            "gross_total mismatch: document=12.10, calculated=26.91."
+          ],
           "warnings": [
             "payable.subtotal is empty.",
             "payable.discount_amount is empty.",
@@ -87,21 +91,23 @@
           ]
         },
         "erp": {
-          "valid": true,
+          "valid": false,
           "erp_available": true,
           "document_gross": "12.10",
-          "erp_gross": "12.1",
+          "erp_gross": "26.91",
           "erp_result": {
-            "will_book_gross": 12.1,
+            "will_book_gross": 26.91,
             "currency": ""
           },
-          "errors": [],
+          "errors": [
+            "ERP gross amount does not match document gross_total: document=12.10, erp=26.91, difference=14.81, tolerance=0.01."
+          ],
           "warnings": []
         }
       },
       "supervisor": null,
-      "status": "ACCEPTED"
+      "status": "REVIEW"
     }
   ],
-  "payable_count": 1
+  "payable_count": 0
 }

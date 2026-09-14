@@ -6,7 +6,7 @@
       "invoice_date": "",
       "due_date": "",
       "invoice_type": "INVOICE",
-      "currency": "INR",
+      "currency": "GBP",
       "supplier": {
         "supplier_id": "",
         "name": "",
@@ -32,10 +32,10 @@
       "taxes": [],
       "line_items": [
         {
-          "description": "Document total (aggregate line recovery)",
+          "description": "Panel Size + 50O0mm(W) x 500mm(H) pe $ $",
           "item_type": "GOODS",
-          "uom": "EA",
-          "quantity": "1",
+          "uom": "",
+          "quantity": "1.00",
           "unit_price": "250.00",
           "total": "250.00",
           "discount": "",

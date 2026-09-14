@@ -1,6 +1,6 @@
 {
   "file": "INV-03.pdf",
-  "elapsed_s": 7.487,
+  "elapsed_s": 8.44,
   "ocr_errors": [],
   "groups": [
     {
@@ -15,12 +15,13 @@
         "evidence": [
           "invoice",
           "invoi",
+          "tax invoice",
           "invoice number",
           "invoice date",
           "amount due"
         ],
         "scores": {
-          "invoice": 25.5,
+          "invoice": 30.5,
           "credit_memo": 4.0,
           "non_payable": 0.0,
           "financial": 8.0
@@ -34,6 +35,7 @@
         "evidence": [
           "invoice",
           "invoi",
+          "tax invoice",
           "invoice number",
           "invoice date",
           "amount due"

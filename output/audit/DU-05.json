@@ -1,6 +1,6 @@
 {
   "file": "DU-05.pdf",
-  "elapsed_s": 3.402,
+  "elapsed_s": 3.874,
   "ocr_errors": [],
   "groups": [
     {
@@ -17,10 +17,10 @@
           "tax invoice"
         ],
         "scores": {
-          "invoice": 17.0,
-          "credit_memo": 2.25,
+          "invoice": 18.0,
+          "credit_memo": 2.75,
           "non_payable": 0.0,
-          "financial": 4.5
+          "financial": 5.5
         }
       },
       "payable_decision": {

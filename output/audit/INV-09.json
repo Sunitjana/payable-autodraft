@@ -1,6 +1,6 @@
 {
   "file": "INV-09.pdf",
-  "elapsed_s": 14.736,
+  "elapsed_s": 12.266,
   "ocr_errors": [],
   "groups": [
     {
@@ -62,8 +62,8 @@
         },
         "financial": {
           "valid": true,
-          "calculated_subtotal": "2615000000.00",
-          "calculated_tax": "0.00",
+          "calculated_subtotal": "6.00",
+          "calculated_tax": "2614999994.00",
           "calculated_discount": "0.00",
           "calculated_charges": "0.00",
           "calculated_gross": "2615000000.00",
@@ -71,7 +71,6 @@
           "errors": [],
           "warnings": [
             "subtotal is not provided; cannot compare.",
-            "total_tax_amount is not provided; cannot compare.",
             "discount_amount is not provided; cannot compare."
           ]
         },
@@ -80,14 +79,12 @@
           "errors": [],
           "warnings": [
             "payable.subtotal is empty.",
-            "payable.total_tax_amount is empty.",
             "payable.discount_amount is empty.",
             "payable.freight_charges is empty.",
             "payable.insurance_charges is empty.",
             "payable.extra_charges is empty.",
             "payable.excise_duties is empty.",
             "subtotal is not provided; cannot compare.",
-            "total_tax_amount is not provided; cannot compare.",
             "discount_amount is not provided; cannot compare."
           ]
         },

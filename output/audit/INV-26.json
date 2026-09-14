@@ -1,6 +1,6 @@
 {
   "file": "INV-26.pdf",
-  "elapsed_s": 9.347,
+  "elapsed_s": 10.15,
   "ocr_errors": [],
   "groups": [
     {
@@ -58,15 +58,15 @@
         },
         "financial": {
           "valid": false,
-          "calculated_subtotal": "28416.88",
+          "calculated_subtotal": "38902.50",
           "calculated_tax": "0.00",
           "calculated_discount": "0.00",
           "calculated_charges": "0.00",
-          "calculated_gross": "28416.88",
+          "calculated_gross": "38902.50",
           "document_gross": "0.00",
           "errors": [
-            "subtotal mismatch: document=873.53, calculated=28416.88.",
-            "gross_total mismatch: document=0.00, calculated=28416.88."
+            "subtotal mismatch: document=873.53, calculated=38902.50.",
+            "gross_total mismatch: document=0.00, calculated=38902.50."
           ],
           "warnings": [
             "total_tax_amount is not provided; cannot compare.",
@@ -76,8 +76,8 @@
         "schema": {
           "valid": false,
           "errors": [
-            "subtotal mismatch: document=873.53, calculated=28416.88.",
-            "gross_total mismatch: document=0.00, calculated=28416.88."
+            "subtotal mismatch: document=873.53, calculated=38902.50.",
+            "gross_total mismatch: document=0.00, calculated=38902.50."
           ],
           "warnings": [
             "payable.total_tax_amount is empty.",
@@ -94,13 +94,13 @@
           "valid": false,
           "erp_available": true,
           "document_gross": "0.00",
-          "erp_gross": "28416.88",
+          "erp_gross": "38902.5",
           "erp_result": {
-            "will_book_gross": 28416.88,
+            "will_book_gross": 38902.5,
             "currency": "MYR"
           },
           "errors": [
-            "ERP gross amount does not match document gross_total: document=0.00, erp=28416.88, difference=28416.88, tolerance=0.01."
+            "ERP gross amount does not match document gross_total: document=0.00, erp=38902.5, difference=38902.50, tolerance=0.01."
           ],
           "warnings": []
         }

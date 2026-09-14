@@ -23,21 +23,29 @@
       "po_id": "",
       "gross_total": "2615000000.00",
       "subtotal": "",
-      "total_tax_amount": "",
+      "total_tax_amount": "2614999994.00",
       "discount_amount": "",
       "freight_charges": "",
       "insurance_charges": "",
       "extra_charges": "",
       "excise_duties": "",
-      "taxes": [],
+      "taxes": [
+        {
+          "tax_type": "VAT",
+          "tax_name": "VAT",
+          "tax_rate": "6.00",
+          "tax_amount": "2614999994.00",
+          "tax_type_code": "PT_060_IVA"
+        }
+      ],
       "line_items": [
         {
-          "description": "Document total (aggregate line recovery)",
+          "description": "Vastuvotja Consignee",
           "item_type": "GOODS",
-          "uom": "EA",
-          "quantity": "1",
-          "unit_price": "2615000000.00",
-          "total": "2615000000.00",
+          "uom": "",
+          "quantity": "1.00",
+          "unit_price": "6.00",
+          "total": "6.00",
           "discount": "",
           "discount_percentage": "",
           "tax_rate": "",

@@ -1,6 +1,6 @@
 {
   "file": "INV-11.pdf",
-  "elapsed_s": 8.203,
+  "elapsed_s": 6.388,
   "ocr_errors": [],
   "groups": [
     {
@@ -14,10 +14,11 @@
         "evidence": [
           "invoice",
           "invoi",
+          "invoice no",
           "arve"
         ],
         "scores": {
-          "invoice": 16.0,
+          "invoice": 20.0,
           "credit_memo": 2.25,
           "non_payable": 0.0,
           "financial": 4.5
@@ -31,6 +32,7 @@
         "evidence": [
           "invoice",
           "invoi",
+          "invoice no",
           "arve"
         ]
       },

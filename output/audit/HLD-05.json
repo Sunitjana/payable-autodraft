@@ -1,6 +1,6 @@
 {
   "file": "HLD-05.pdf",
-  "elapsed_s": 8.497,
+  "elapsed_s": 8.751,
   "ocr_errors": [],
   "groups": [
     {
@@ -47,52 +47,58 @@
           "warnings": [
             "supplier_id is unresolved/blank; this is permitted by the challenge.",
             "payment_term_id is unresolved/blank.",
+            "taxes[1].tax_type_code is unresolved/blank.",
             "buyer.company_code is unresolved/blank.",
             "buyer.business_unit_code is unresolved/blank.",
             "buyer.location_code is unresolved/blank."
           ]
         },
         "financial": {
-          "valid": true,
-          "calculated_subtotal": "835.27",
-          "calculated_tax": "176.87",
-          "calculated_discount": "0.00",
-          "calculated_charges": "0.00",
-          "calculated_gross": "1012.14",
+          "valid": false,
+          "calculated_subtotal": "1796.54",
+          "calculated_tax": "265.20",
+          "calculated_discount": "1049.60",
+          "calculated_charges": "88.33",
+          "calculated_gross": "1100.47",
           "document_gross": "1012.14",
-          "errors": [],
+          "errors": [
+            "gross_total mismatch: document=1012.14, calculated=1100.47."
+          ],
           "warnings": [
-            "discount_amount is not provided; cannot compare."
+            "subtotal is not provided; cannot compare."
           ]
         },
         "schema": {
-          "valid": true,
-          "errors": [],
+          "valid": false,
+          "errors": [
+            "gross_total mismatch: document=1012.14, calculated=1100.47."
+          ],
           "warnings": [
-            "payable.discount_amount is empty.",
+            "payable.subtotal is empty.",
             "payable.freight_charges is empty.",
             "payable.insurance_charges is empty.",
-            "payable.extra_charges is empty.",
             "payable.excise_duties is empty.",
-            "discount_amount is not provided; cannot compare."
+            "subtotal is not provided; cannot compare."
           ]
         },
         "erp": {
-          "valid": true,
+          "valid": false,
           "erp_available": true,
           "document_gross": "1012.14",
-          "erp_gross": "1012.14",
+          "erp_gross": "1100.47",
           "erp_result": {
-            "will_book_gross": 1012.14,
+            "will_book_gross": 1100.47,
             "currency": "EUR"
           },
-          "errors": [],
+          "errors": [
+            "ERP gross amount does not match document gross_total: document=1012.14, erp=1100.47, difference=88.33, tolerance=0.01."
+          ],
           "warnings": []
         }
       },
       "supervisor": null,
-      "status": "ACCEPTED"
+      "status": "REVIEW"
     }
   ],
-  "payable_count": 1
+  "payable_count": 0
 }

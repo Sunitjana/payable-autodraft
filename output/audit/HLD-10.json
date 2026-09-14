@@ -1,6 +1,6 @@
 {
   "file": "HLD-10.pdf",
-  "elapsed_s": 8.926,
+  "elapsed_s": 8.407,
   "ocr_errors": [],
   "groups": [
     {
@@ -18,10 +18,10 @@
           "arve kuupaev"
         ],
         "scores": {
-          "invoice": 18.0,
-          "credit_memo": 2.5,
+          "invoice": 17.0,
+          "credit_memo": 2.0,
           "non_payable": 0.0,
-          "financial": 5.0
+          "financial": 4.0
         }
       },
       "payable_decision": {

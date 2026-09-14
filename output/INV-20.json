@@ -1,45 +1,10 @@
 {
   "file": "INV-20.pdf",
-  "payables": [
+  "payables": [],
+  "declined": [
     {
-      "invoice_number": "20423591",
-      "invoice_date": "2026-02-16",
-      "due_date": "2026-03-08",
-      "invoice_type": "INVOICE",
-      "currency": null,
-      "supplier": {
-        "supplier_id": "",
-        "name": "",
-        "vat_id": "CHE-726",
-        "address": ""
-      },
-      "buyer": {
-        "company_code": "",
-        "business_unit_code": "",
-        "location_code": ""
-      },
-      "payment_term_id": "",
-      "po_number": "",
-      "po_id": "",
-      "gross_total": "12.10",
-      "subtotal": "",
-      "total_tax_amount": "12.10",
-      "discount_amount": "",
-      "freight_charges": "",
-      "insurance_charges": "",
-      "extra_charges": "",
-      "excise_duties": "",
-      "taxes": [
-        {
-          "tax_type": "VAT",
-          "tax_name": "VAT",
-          "tax_rate": "8.10",
-          "tax_amount": "12.10",
-          "tax_type_code": "CH_081_VAT"
-        }
-      ],
-      "line_items": []
+      "doc_type": "invoice",
+      "reason": "Manual review required after deterministic validation."
     }
-  ],
-  "declined": []
+  ]
 }

@@ -2,11 +2,15 @@
 
 ## AI-Powered Document-to-ERP Payable Automation
 
-Payable Auto-Draft is a document-understanding pipeline that converts heterogeneous PDF financial documents into structured, ERP-validatable payable AutoDraft JSON.
+Payable Auto-Draft is an **automated, multi-model document-to-ERP payable automation system**. It converts heterogeneous PDF financial documents into structured, ERP-validatable payable AutoDraft JSON with minimal manual intervention.
 
 The system is designed for the supplied challenge where the input directory may contain standard invoices, credit memos, non-payable documents, multi-page documents, scanned PDFs, different layouts, currencies, languages, line/header taxes, discounts, and additional charges.
 
-> **Core principle:** this is a document-understanding system, not just an OCR system. OCR is used to obtain evidence; deterministic extraction, master-data matching, financial validation, schema validation, and ERP recomputation determine whether a payable is safe to book.
+The complete project combines **PDF parsing, OCR, document understanding, deterministic extraction, multiple OCR/AI rescue models, a VLM supervisor, master-data matching, financial validation, schema validation, and ERP recomputation**. The AI models are not the sole decision makers: they provide document evidence, recognition, classification, extraction, rescue, or verification, while deterministic validation and the supplied ERP remain the final safety gates.
+
+> **Core principle:** Payable Auto-Draft is an end-to-end document-understanding and automation system, not just an OCR system. Multiple models can work together to handle difficult documents, while deterministic rules, master-data matching, financial validation, schema validation, and ERP recomputation determine whether a payable is safe to book.
+
+> **Runtime note:** All integrated AI/OCR models have been tested during development. However, running the full multi-model stack locally can require substantial CPU, RAM, GPU VRAM, model-loading time, and inference time. On lower-end local systems, processing can become very slow or may appear to be stuck while a model is loading or performing inference. For that reason, the heavy model layers can be disabled on low-resource machines and enabled on a stronger system to run the full project.
 
 ---
 
@@ -43,80 +47,139 @@ The pipeline must also correctly preserve whether taxes are header-level or line
 
 # 2. Architecture Overview
 
+Payable Auto-Draft is designed as a **multi-stage automated pipeline**. The lightweight CPU-first path avoids unnecessary model execution, while the full configuration can activate the complete OCR/AI/VLM stack for difficult documents.
+
 ```text
-                         documents/*.pdf
-                                │
-                                ▼
-                    ┌─────────────────────┐
-                    │     PDF Loader      │
-                    │       pypdf         │
-                    └──────────┬──────────┘
-                               │
-                  Native PDF text available?
-                         │               │
-                       Yes              No/weak
-                         │               │
-                         │               ▼
-                         │      ┌─────────────────┐
-                         │      │ Page Rendering  │
-                         │      │   pypdfium2     │
-                         │      └────────┬────────┘
-                         │               │
-                         │               ▼
-                         │      ┌─────────────────┐
-                         │      │ OCR Triage      │
-                         │      │   Tesseract     │
-                         │      └────────┬────────┘
-                         │               │
-                         └───────┬───────┘
-                                 ▼
-                       Document Understanding
-                                 │
-                ┌────────────────┴────────────────┐
-                │                                 │
-                ▼                                 ▼
-        Payable / Non-payable             Multiple payable groups
-                │                                 │
-                └────────────────┬────────────────┘
-                                 ▼
-                         Invoice Extraction
-                                 │
-          ┌──────────────┬───────┼────────┬─────────────┐
-          ▼              ▼       ▼        ▼             ▼
-       Header        Line Items  Tax   Discounts      Charges
-          │              │       │        │             │
-          └──────────────┴───────┴────────┴─────────────┘
-                                 │
-                                 ▼
-                         Master Data Matching
-                                 │
-        ┌────────────┬───────────┼──────────┬────────────┐
-        ▼            ▼           ▼          ▼            ▼
-     Supplier        PO         Tax    Payment Terms   CoB
-                                 │
-                                 ▼
-                         AutoDraft Builder
-                                 │
-                                 ▼
-                  ┌─────────────────────────┐
-                  │ Validation              │
-                  │ • Master data           │
-                  │ • Financial consistency │
-                  │ • JSON schema           │
-                  │ • Supplied ERP          │
-                  └────────────┬────────────┘
-                               │
-                  ┌────────────┴────────────┐
-                  ▼                         ▼
-             ERP-safe payable          Review/declined
-                  │
-                  ▼
-             output/*.json
+                              documents/*.pdf
+                                      │
+                                      ▼
+                           ┌─────────────────────┐
+                           │     PDF Loader      │
+                           │       pypdf         │
+                           └──────────┬──────────┘
+                                      │
+                           Native PDF text available?
+                              │                  │
+                            Yes                 No/Weak
+                              │                  │
+                              │                  ▼
+                              │        ┌──────────────────┐
+                              │        │ Page Rendering   │
+                              │        │   pypdfium2      │
+                              │        └────────┬─────────┘
+                              │                 │
+                              │                 ▼
+                              │        ┌──────────────────┐
+                              │        │ OCR Triage       │
+                              │        │   Tesseract      │
+                              │        └────────┬─────────┘
+                              │                 │
+                              │          insufficient evidence?
+                              │                 │
+                              │          ┌──────┴──────┐
+                              │          │             │
+                              │         No            Yes
+                              │          │             │
+                              │          │             ▼
+                              │          │      ┌───────────────┐
+                              │          │      │ PaddleOCR      │
+                              │          │      └───────┬───────┘
+                              │          │              │
+                              │          │       still insufficient?
+                              │          │              │
+                              │          │              ▼
+                              │          │      ┌───────────────┐
+                              │          │      │ Unlimited-OCR │
+                              │          │      └───────┬───────┘
+                              │          │              │
+                              └──────────┴──────────────┘
+                                      │
+                                      ▼
+                            Document Understanding
+                                      │
+                         ┌────────────┼─────────────┐
+                         ▼            ▼             ▼
+                    Classification  Payable      Multi-payable
+                                   Detection       Splitting
+                         │            │             │
+                         └────────────┴─────────────┘
+                                      │
+                                      ▼
+                              Structured Extraction
+                                      │
+                    ┌─────────────────┼─────────────────┐
+                    ▼                 ▼                 ▼
+                 Header           Line Items       Taxes/Discounts/
+                                                   Charges/Terms
+                    │                 │                 │
+                    └─────────────────┼─────────────────┘
+                                      ▼
+                              Confidence / Review
+                                      │
+                           critical field ambiguous?
+                              │                  │
+                             No                 Yes
+                              │                  ▼
+                              │        ┌────────────────────┐
+                              │        │ Qwen3-VL Supervisor│
+                              │        └─────────┬──────────┘
+                              │                  │
+                              │            Advisory repair/
+                              │               verification
+                              │                  │
+                              └──────────────────┘
+                                      │
+                                      ▼
+                              Master Data Matching
+                                      │
+                    ┌─────────────────┼────────────────────┐
+                    ▼                 ▼                    ▼
+                 Supplier             PO              Tax/Terms/CoB
+                                      │
+                                      ▼
+                              AutoDraft Builder
+                                      │
+                                      ▼
+                         Deterministic Validation
+                    ┌──────────────┬──┴──────────────┐
+                    ▼              ▼                 ▼
+               Master Data     Financial          Schema
+               Validation      Validation        Validation
+                    └──────────────┬────────────────┘
+                                   ▼
+                             Supplied ERP
+                          Recompute + Validate
+                                   │
+                           ┌───────┴────────┐
+                           ▼                ▼
+                       ACCEPTED          REVIEW/
+                       payable          DECLINED
+                           │                │
+                           └───────┬────────┘
+                                   ▼
+                            JSON + Audit Output
 ```
 
----
+### Two operating modes
+
+**Low-resource / CPU-first mode**
+
+- Uses native PDF text whenever possible.
+- Uses lazy rendering and Tesseract only when required.
+- Heavy OCR/AI/VLM layers are disabled to keep local execution practical.
+- Intended for machines with limited RAM/CPU resources.
+
+**Full multi-model mode**
+
+- Enables the available OCR and AI rescue layers.
+- Uses PaddleOCR and Unlimited-OCR when their configured routing conditions require them.
+- Enables the Qwen3-VL supervisor for difficult or ambiguous cases.
+- Retains deterministic validation and ERP recomputation as the final authority.
+- Requires a stronger local system; **32 GB RAM minimum is recommended for multiple models, with an NVIDIA GPU strongly recommended for the full stack.**
 
 # 3. Processing Pipeline — Step by Step
+
+The pipeline is automated from PDF discovery through final ERP validation. Heavy models are **conditional stages**: they are available in the full system but are invoked only when enabled and when the routing logic requires them.
 
 ## Step 1 — Discover input PDFs
 
@@ -138,7 +201,7 @@ The application processes files sequentially to keep memory and CPU usage predic
 
 Uses `pypdf` for native PDF text extraction.
 
-This is intentionally preferred over rendering every page as an image because digitally generated invoices usually contain selectable text. Native extraction is significantly cheaper than OCR.
+Digitally generated PDFs are handled through native text extraction first because this is substantially cheaper than rendering every page as an image.
 
 ---
 
@@ -148,23 +211,20 @@ This is intentionally preferred over rendering every page as an image because di
 
 Uses `pypdfium2` only when a page needs visual processing.
 
-Pages are rendered lazily instead of converting the entire document to high-resolution images up front.
-
-This is important for multi-page bundles containing attachments, delivery notes, or other supporting pages.
+Pages are rendered lazily instead of converting the entire document to high-resolution images up front. This is important for multi-page bundles containing attachments, delivery notes, or other supporting pages.
 
 ---
 
-## Step 4 — OCR cascade
+## Step 4 — OCR triage
 
 ### `src/ocr/extractor.py`
 
-
-Default strategy:
+The OCR layer first determines whether native PDF text is sufficient.
 
 ```text
 Native PDF text
       │
-      ├── good → use native text
+      ├── good evidence ───────────────► continue
       │
       └── weak/empty
               │
@@ -174,53 +234,45 @@ Native PDF text
               ▼
            Tesseract
               │
-              ├── enough evidence → continue
-              │
-              └── optional rescue
-                       ├── PaddleOCR
-                       └── Unlimited-OCR
+       sufficient evidence?
+          │           │
+         Yes          No
+          │           │
+          │           ▼
+          │       PaddleOCR
+          │           │
+          │    sufficient evidence?
+          │       │           │
+          │      Yes          No
+          │       │           │
+          │       │           ▼
+          │       │      Unlimited-OCR
+          │       │           │
+          └───────┴───────────┘
+                    │
+                    ▼
+             OCR evidence
 ```
 
-### Optional OCR components
+### OCR model layers
 
-- PaddleOCR can be enabled for stronger visual OCR.
-- Unlimited-OCR can be enabled as an additional rescue layer.
-- These are disabled by default to keep CPU/local execution practical.
+1. **Tesseract** — lightweight CPU OCR and the primary local OCR fallback.
+2. **PaddleOCR** — stronger visual OCR for documents where the lightweight OCR path is insufficient.
+3. **Unlimited-OCR** — additional rescue OCR for difficult visual documents.
+
+These layers are configurable through `.env`. They are not required to execute on every document/page.
 
 ---
 
 ## Step 5 — Page triage
 
-The system first performs cheap triage to identify pages likely to contain a payable.
+The system performs cheap triage to identify pages likely to contain a payable.
 
-Examples of strong payable indicators include:
+Strong payable indicators include invoice, tax invoice, credit note/memo, amount due, total amount, VAT/IVA/MWST/GST, and payment terms.
 
-- invoice
-- tax invoice
-- Rechnung
-- Arve
-- Fatura/Factura
-- credit note
-- credit memo
-- amount due
-- total amount
-- VAT/IVA/MWST/GST
-- payment terms
+Strong non-payable indicators include purchase order, quotation, delivery note, packing list, goods receipt, order confirmation, remittance advice, timesheet, payment reminder, and Mahnung.
 
-Strong non-payable indicators include:
-
-- purchase order
-- quotation
-- delivery note
-- packing list
-- goods receipt
-- order confirmation
-- remittance advice
-- timesheet
-- payment reminder
-- Mahnung
-
-This prevents expensive OCR from being applied to every page of a large PDF bundle.
+This prevents expensive processing from being applied unnecessarily to every page.
 
 ---
 
@@ -228,7 +280,7 @@ This prevents expensive OCR from being applied to every page of a large PDF bund
 
 ### `src/document_understanding/classifier.py`
 
-Classifies the document using the extracted evidence and identifies categories such as:
+Classifies extracted document evidence into categories such as:
 
 - invoice
 - credit memo
@@ -245,7 +297,7 @@ A payment reminder is not automatically converted into a new payable merely beca
 
 Determines whether the document represents an economically payable document.
 
-A document can therefore be:
+Possible states:
 
 ```text
 PAYABLE
@@ -263,22 +315,156 @@ A non-payable document is not forced into the invoice schema.
 
 A single PDF can contain more than one payable.
 
-The system groups pages into payable/document groups before extraction so that each bookable payable can become a separate object in the `payables[]` array.
-
-Output contract:
-
-```json
-{
-  "file": "example.pdf",
-  "payables": [
-    {},
-    {}
-  ],
-  "declined": []
-}
-```
+The system groups pages into payable/document groups before extraction so each bookable payable can become a separate object in `payables[]`.
 
 ---
+
+## Step 9 — Structured invoice extraction
+
+The extraction layer converts document evidence into structured fields.
+
+It extracts:
+
+- invoice number
+- invoice date
+- due date
+- invoice type
+- currency
+- supplier information
+- VAT/tax identifier
+- PO number
+- payment terms
+- gross amount
+- subtotal/tax where available
+- line items
+- taxes
+- discounts
+- additional charges
+
+The individual extraction modules are described in the next section.
+
+---
+
+## Step 10 — Confidence and ambiguity handling
+
+After extraction, critical fields are checked for missing, conflicting, or ambiguous evidence.
+
+The system does not blindly accept an AI/OCR result simply because a value was returned.
+
+When the configured supervisor path is enabled and a critical field requires additional verification, the document can enter the AI rescue stage.
+
+---
+
+## Step 11 — Qwen3-VL supervisor / AI rescue
+
+### `src/supervisor/`
+
+```text
+src/supervisor/
+├── qwen_vl.py
+├── verifier.py
+└── confidence.py
+```
+
+The supervisor is an additional AI layer for difficult cases.
+
+```text
+Structured extraction
+        │
+        ▼
+Critical information missing,
+conflicting, or ambiguous?
+        │
+       Yes
+        ▼
+Qwen3-VL supervisor
+        │
+        ▼
+Advisory repair / verification
+        │
+        ▼
+Deterministic validation again
+```
+
+The supervisor can inspect the available document evidence and propose or verify difficult fields.
+
+**Important:** the supervisor is not the final authority. Any repaired or verified values must pass the same deterministic validation, master-data validation, schema validation, and ERP validation gates.
+
+---
+
+## Step 12 — Master-data matching
+
+The extracted information is matched against the supplied master data:
+
+```text
+Supplier
+PO
+Tax
+Payment Terms
+Chart of Books
+```
+
+No master-data value is invented when a genuine match cannot be established.
+
+---
+
+## Step 13 — AutoDraft construction
+
+### `src/autodraft/builder.py`
+
+Builds the final payable object according to `AUTODRAFT_SCHEMA.md`.
+
+---
+
+## Step 14 — Deterministic validation
+
+The generated AutoDraft passes through:
+
+1. Master-data validation
+2. Financial consistency validation
+3. JSON schema validation
+4. Supplied ERP validation
+
+AI output does not bypass these gates.
+
+---
+
+## Step 15 — ERP recomputation
+
+### `src/validation/erp_validator.py`
+
+The supplied `erp.py` is the final financial/booking authority.
+
+The ERP recomputes the expected booking result and the pipeline compares it against the genuine financial structure represented by the document.
+
+---
+
+## Step 16 — Final decision
+
+```text
+                    AutoDraft
+                       │
+          ┌────────────┼────────────┐
+          ▼            ▼            ▼
+       Master       Financial      Schema
+      Validation    Validation    Validation
+          └────────────┼────────────┘
+                       ▼
+                  Supplied ERP
+                       │
+                 ┌─────┴─────┐
+                 ▼           ▼
+             ACCEPTED      REVIEW/
+              payable     DECLINED
+```
+
+Only a safely validated result becomes an accepted payable.
+
+---
+
+## Step 17 — Evidence and audit output
+
+The system saves the final JSON and processing/audit information for traceability and review.
 
 # 4. Extraction Layer
 
@@ -625,9 +811,9 @@ A payable is accepted only when the deterministic validation gates required by t
 
 ---
 
-# 11. Supervisor / AI Rescue Layer
+# 11. AI Supervisor / Rescue Layer
 
-The project contains an optional supervisor layer:
+The full Payable Auto-Draft architecture includes a supervisor layer for difficult or ambiguous documents.
 
 ```text
 src/supervisor/
@@ -636,38 +822,97 @@ src/supervisor/
 └── confidence.py
 ```
 
-The intended architecture is:
+### Role of the supervisor
+
+The supervisor is used after the primary extraction path when critical information is:
+
+- missing,
+- ambiguous,
+- conflicting,
+- low-confidence, or
+- difficult to recover with the configured OCR path.
+
+The intended flow is:
 
 ```text
-Deterministic extraction
-        │
-        ▼
-Is critical information missing/ambiguous?
-        │
-       Yes
-        ▼
-Optional Qwen3-VL supervisor
-        │
-        ▼
-Advisory repair
-        │
-        ▼
-Run deterministic validation again
+OCR / deterministic extraction
+            │
+            ▼
+     Confidence checks
+            │
+            ▼
+ Critical ambiguity detected?
+       │             │
+      No            Yes
+       │             │
+       │             ▼
+       │      Qwen3-VL supervisor
+       │             │
+       │             ▼
+       │      Advisory verification/
+       │           field repair
+       │             │
+       └─────────────┘
+             │
+             ▼
+   Deterministic validation
+             │
+             ▼
+        Supplied ERP
 ```
 
-The supervisor is **not** the final authority. Any repaired fields are passed through the same validation process.
+### Model configuration
 
-By default:
+The full project can enable the supervisor with:
 
-```text
+```dotenv
+SUPERVISOR_ENABLED=true
+SUPERVISOR_MODEL=Qwen/Qwen3-VL-8B-Instruct
+SUPERVISOR_ON_CONFLICT=true
+SUPERVISOR_CONFIDENCE_THRESHOLD=0.90
+```
+
+For a low-resource local machine, it can be disabled:
+
+```dotenv
 SUPERVISOR_ENABLED=false
 ```
 
-This keeps the standard run lightweight and avoids requiring a large local model.
+Disabling it does not remove the architecture; it selects the lightweight operating mode.
+
+### Safety boundary
+
+The supervisor is **advisory, not authoritative**. Its output is never accepted directly into ERP booking. Repaired fields are sent back through deterministic validation and ERP recomputation.
+
+# 12. Model and AI Layer Summary
+
+Payable Auto-Draft is a multi-model automation system. Each model/layer has a specific responsibility.
+
+| Layer | Component | Role | Full Mode |
+|------|-----------|------|-----------|
+| PDF parsing | `pypdf` | Native PDF text extraction | ON |
+| Rendering | `pypdfium2` | Convert pages to visual input when required | ON |
+| OCR | Tesseract | Lightweight CPU OCR / first OCR fallback | ON |
+| OCR rescue | PaddleOCR | Stronger visual OCR | ON |
+| OCR rescue | Unlimited-OCR | Additional difficult-document OCR rescue | ON |
+| Document understanding | Classifier / payable detector / splitter | Classify documents, detect payables, split multiple payables | ON |
+| Extraction | Deterministic extraction modules | Extract header, lines, taxes, discounts, charges, terms | ON |
+| AI supervisor | Qwen3-VL | Verify/repair ambiguous critical information | ON |
+| Matching | Master-data matchers | Supplier, PO, tax, payment terms, CoB matching | ON |
+| Validation | Deterministic validators | Master, financial, schema checks | ON |
+| ERP | Supplied `erp.py` | Final financial recomputation and booking validation | ON |
+
+### Model execution principle
+
+**Full mode:** all configured model switches are `true`.
+
+**CPU-first mode:** heavy model switches are `false` to keep local execution practical.
+
+In both modes, the final decision remains controlled by deterministic validation and the supplied ERP logic.
 
 ---
 
-# 12. Evidence and Audit
+# 13. Evidence and Audit
 
 The application can store processing evidence and audit information.
 
@@ -715,7 +960,7 @@ Rendered pages used by the OCR path are retained when evidence storage is enable
 
 ---
 
-# 13. Project Structure
+# 14. Project Structure
 
 ```text
 payable-autodraft/
@@ -808,65 +1053,62 @@ payable-autodraft/
 
 ---
 
-# 14. System Requirements
+# 15. System Requirements
 
-This project uses PDF processing, OCR, image processing, optional Transformers/VLM components, and AI-based document validation.
+Payable Auto-Draft supports two local operating modes:
 
-## 14.1 Local Minimum Requirements
+1. **CPU-first / low-resource mode** — heavy AI/OCR layers are disabled.
+2. **Full multi-model mode** — the complete OCR/AI/VLM stack is available and enabled.
 
-| Component | Requirement |
-|-----------|-------------|
+The project is therefore not limited to a low-end CPU-only configuration. The CPU-first mode exists so the same application can still be developed and tested on a lower-resource local machine.
+
+## 14.1 Basic Local System — CPU-First Mode
+
+| Component | Basic Requirement |
+|-----------|-------------------|
 | OS | Windows 10/11 64-bit or Linux 64-bit |
 | CPU | Intel Core i5 / AMD Ryzen 5 or equivalent |
 | CPU Cores | 4+ |
 | RAM | 16 GB |
-| GPU | NVIDIA RTX 4050 or equivalent |
-| GPU VRAM | 6 GB+ |
+| GPU | Not required |
 | Storage | 30 GB+ free |
 | SSD | Recommended |
+| Python | 3.10 – 3.12 |
 
-## 14.2 Local Recommended / Better Requirements
+This configuration is intended for the lightweight path using native PDF extraction, lazy rendering, Tesseract, deterministic extraction, matching, and validation.
 
-| Component | Requirement |
-|-----------|-------------|
+Heavy OCR/AI/VLM models should be disabled on this class of machine.
+
+## 14.2 Better Local System — Full Multi-Model Mode
+
+For running multiple OCR/AI models together and the Qwen3-VL supervisor:
+
+| Component | Recommended Requirement |
+|-----------|-------------------------|
 | OS | Windows 11 64-bit / Linux 64-bit |
-| CPU | Intel Core i7 / Core Ultra 7 / AMD Ryzen 7 |
+| CPU | Intel Core i7 / Core Ultra 7 / AMD Ryzen 7 or better |
 | CPU Cores | 8+ |
-| RAM | 32 GB |
-| GPU | NVIDIA RTX 4060 / RTX 5060 or better |
-| GPU VRAM | 8 GB+ |
+| RAM | **32 GB minimum** |
+| GPU | **NVIDIA GPU strongly recommended** |
+| GPU VRAM | **8 GB+ recommended** |
 | Storage | 50 GB+ free |
-| Storage Type | NVMe SSD |
+| Storage Type | NVMe SSD recommended |
+| Python | 3.10 – 3.12 |
 
-## 14.3 Cloud / Virtual GPU Requirements
+> **Important:** 32 GB RAM is the recommended minimum for the multiple-model local configuration. A suitable NVIDIA GPU is strongly recommended for the full AI/OCR/VLM stack. CPU-only execution of several large models can be very slow and may appear to stall during model loading or inference.
 
-### Minimum Cloud Configuration
+## 14.3 Resource Selection
 
-| Component | Requirement |
-|-----------|-------------|
-| OS | Ubuntu 22.04/24.04 64-bit |
-| vCPU | 4+ |
-| System RAM | 16 GB+ |
-| GPU | NVIDIA GPU |
-| GPU VRAM | 8 GB+ |
-| CUDA | CUDA-compatible environment |
-| Storage | 30 GB+ |
-| Internet | Required |
+| Machine | Recommended Mode | Heavy Models |
+|---------|------------------|--------------|
+| Basic / low-resource PC | CPU-first | OFF |
+| 16 GB RAM system | CPU-first | Prefer OFF |
+| 32 GB+ RAM + strong CPU | Full local | Can be ON |
+| 32 GB+ RAM + NVIDIA GPU | Full multi-model | ON / Recommended |
 
-### Recommended Cloud Configuration
+The same project is used in both modes. Only the model switches in `.env` change the runtime configuration.
 
-| Component | Requirement |
-|-----------|-------------|
-| vCPU | 8+ |
-| System RAM | 32 GB+ |
-| GPU | NVIDIA T4 / L4 / A10 / A100 or equivalent |
-| GPU VRAM | 16 GB+ preferred |
-| Storage | 50–100 GB SSD |
-| CUDA | CUDA-compatible environment |
-
-
-
-# 15. External System Requirement — Tesseract
+# 16. External System Requirement — Tesseract
 
 `pytesseract` is only the Python wrapper.
 
@@ -894,7 +1136,7 @@ For multilingual Tesseract OCR, the corresponding trained-language data must als
 
 ---
 
-# 16. Python Dependencies
+# 17. Python Dependencies
 
 The main dependencies are defined in `requirements.txt`.
 
@@ -923,11 +1165,11 @@ torch
 transformers
 ```
 
-The optional packages are kept in the environment for rescue/supervisor functionality but are disabled by default in the standard CPU configuration.
+The OCR/Transformer packages support the full multi-model configuration. Whether their runtime model stages are active is controlled through `.env`.
 
 ---
 
-# 17. Installation — Windows PowerShell
+# 18. Installation — Windows PowerShell
 
 Open PowerShell in the project root.
 
@@ -977,7 +1219,7 @@ tesseract --version
 
 ---
 
-# 18. Configuration
+# 19. Configuration
 
 The application reads optional configuration from:
 
@@ -985,17 +1227,26 @@ The application reads optional configuration from:
 .env
 ```
 
-The file is optional because safe defaults are already defined in `src/config/settings.py`.
+The `.env` file controls which OCR/AI layers are active.
 
+## 18.1 Full Multi-Model Configuration
+
+> **PRIMARY FULL-PROJECT SETTING:** When running on a sufficiently powerful local system, change the model switches in `.env` from `false` to `true`. The full project configuration is explicitly:
+
+
+**For the complete project on a sufficiently powerful local system, set all model switches to `true`:**
+
+```dotenv
+PADDLE_ENABLED=true
 PADDLE_PIPELINE_VERSION=v1.6
 PADDLE_DEVICE=cpu
 
-UNLIMITED_OCR_ENABLED=false
+UNLIMITED_OCR_ENABLED=true
 UNLIMITED_OCR_MODEL=baidu/Unlimited-OCR
 UNLIMITED_OCR_MODE=pipeline
 MODEL_DEVICE=auto
 
-SUPERVISOR_ENABLED=false
+SUPERVISOR_ENABLED=true
 SUPERVISOR_MODEL=Qwen/Qwen3-VL-8B-Instruct
 SUPERVISOR_ON_CONFLICT=true
 SUPERVISOR_CONFIDENCE_THRESHOLD=0.90
@@ -1006,13 +1257,67 @@ STORE_EVIDENCE=true
 LOG_LEVEL=INFO
 ```
 
-Do not place secrets such as Hugging Face tokens in source files. If a token is required for an optional model, use the environment variable:
+### Important `.env` rule
+
+The project contains multiple AI/OCR layers, but **all heavy model switches should be explicitly set to `true` when the goal is to run the full project**:
+
+```text
+PADDLE_ENABLED=true
+UNLIMITED_OCR_ENABLED=true
+SUPERVISOR_ENABLED=true
+```
+
+This is the **full multi-model configuration**.
+
+## 18.2 Low-Resource CPU-First Configuration
+
+If the local machine has limited RAM/CPU resources, keep the same project but disable the heavy layers:
+
+```dotenv
+PADDLE_ENABLED=false
+UNLIMITED_OCR_ENABLED=false
+SUPERVISOR_ENABLED=false
+DEEP_PAGE_WINDOW=2
+```
+
+The lightweight path can then run using native PDF extraction, Tesseract, deterministic processing, master-data matching, and validation.
+
+## 18.3 Why Two Configurations Exist
+
+The AI models are part of the full Payable Auto-Draft system. They are not being removed from the project when disabled.
+
+The distinction is purely operational:
+
+```text
+LOW-RESOURCE MACHINE
+        │
+        ▼
+CPU-FIRST CONFIGURATION
+        │
+Heavy models OFF
+        │
+        ▼
+Faster / lower-memory local execution
+
+
+BETTER MACHINE
+        │
+        ▼
+FULL MULTI-MODEL CONFIGURATION
+        │
+PaddleOCR + Unlimited-OCR + Qwen3-VL ON
+        │
+        ▼
+Maximum available document-understanding pipeline
+```
+
+This allows the same codebase to run on both development-class and high-resource local systems.
+
+Do not place secrets such as Hugging Face tokens in source files. If a token is required for an optional model, use:
 
 ```dotenv
 HF_TOKEN=your_token_here
 ```
-
----
 
 # 20. The One Required Command
 
@@ -1248,9 +1553,9 @@ keeps large attachment bundles from sending every page through expensive OCR.
 
 This setting can be increased when a particular document format requires more pages to be inspected.
 
-## Optimization 5 — Optional heavy models
+## Optimization 5 — Conditional multi-model routing
 
-PaddleOCR, Unlimited-OCR, and Qwen/VLM processing are not automatically applied to every page.
+PaddleOCR, Unlimited-OCR, and Qwen/VLM processing are available as full-project rescue/supervisor stages. Routing avoids blindly applying every model to every page, but enabling all model switches can still substantially increase runtime and resource usage.
 
 ## Optimization 6 — Sequential processing
 
@@ -1336,9 +1641,11 @@ Restart PowerShell after changing `PATH`.
 
 ---
 
-## OCR is too slow
+## OCR / AI processing is too slow
 
-Keep the CPU configuration:
+If all model switches are `true`, the application is running the full multi-model configuration. This can be very slow on a local CPU and can consume substantial RAM/VRAM.
+
+For a low-resource CPU-first run, temporarily use:
 
 ```dotenv
 PADDLE_ENABLED=false
@@ -1348,6 +1655,16 @@ DEEP_PAGE_WINDOW=2
 ```
 
 Also avoid unnecessarily increasing `OCR_DPI`.
+
+After moving to a stronger system, restore:
+
+```dotenv
+PADDLE_ENABLED=true
+UNLIMITED_OCR_ENABLED=true
+SUPERVISOR_ENABLED=true
+```
+
+to run the full configured project.
 
 ---
 
@@ -1375,26 +1692,35 @@ python -m src.main
 
 ## PaddleOCR model download causes problems
 
-PaddleOCR is optional. Keep:
+PaddleOCR is part of the full multi-model configuration. If the machine cannot support it reliably, use the CPU-first configuration:
 
 ```dotenv
 PADDLE_ENABLED=false
 ```
 
-for the lightweight local path.
+Then restore `PADDLE_ENABLED=true` when running on a sufficiently capable system.
 
 ---
 
 ## Transformer/VLM model consumes too much RAM
 
-Keep:
+Qwen3-VL and other heavy model stages can consume substantial memory.
+
+For the full multi-model configuration, use a stronger system with **32 GB RAM minimum recommended** and an NVIDIA GPU strongly recommended.
+
+For low-resource CPU-first execution:
 
 ```dotenv
 SUPERVISOR_ENABLED=false
 UNLIMITED_OCR_ENABLED=false
 ```
 
-unless the machine has enough memory and the relevant models are available.
+When sufficient resources are available, restore the full configuration:
+
+```dotenv
+SUPERVISOR_ENABLED=true
+UNLIMITED_OCR_ENABLED=true
+```
 
 ---
 
@@ -1577,7 +1903,58 @@ output/
 
 ---
 
-# 37. Final Architecture Summary
+# 37. Full Project Runtime Modes
+
+The repository contains the **complete automated Payable Auto-Draft system with multiple AI/OCR models**.
+
+The intended usage is:
+
+```text
+                  PAYABLE AUTO-DRAFT
+                         │
+            ┌────────────┴────────────┐
+            │                         │
+      LOW-RESOURCE LOCAL        BETTER LOCAL SYSTEM
+            │                         │
+       Model switches OFF         All model switches ON
+            │                         │
+       CPU-first path          Full multi-model path
+            │                         │
+            └────────────┬────────────┘
+                         ▼
+                 Same application
+                         │
+                         ▼
+              Validated AutoDraft JSON
+```
+
+### Full configuration — use on a better local system
+
+Change the model switches in `.env` from `false` to `true`:
+
+```dotenv
+PADDLE_ENABLED=true
+UNLIMITED_OCR_ENABLED=true
+SUPERVISOR_ENABLED=true
+```
+
+This enables the full configured multi-model project. The models remain routed through their respective OCR/rescue/supervisor stages rather than blindly running on every page.
+
+### Low-resource configuration — use when local hardware is limited
+
+```dotenv
+PADDLE_ENABLED=false
+UNLIMITED_OCR_ENABLED=false
+SUPERVISOR_ENABLED=false
+```
+
+The CPU-first path remains available for lower-resource local development and testing.
+
+> **Important:** `false` means the heavy model layer is disabled for resource reasons; it does **not** mean the model or feature is missing from the project. On a sufficiently powerful local system, set all model switches to `true` to run the full project.
+
+---
+
+# 38. Final Architecture Summary
 
 ```text
 PDF documents
@@ -1587,7 +1964,7 @@ Native PDF extraction
      │
      ├──────────────► Good text ──────────────┐
      │                                         │
-     └── Weak/scanned ─► Triage OCR ─► OCR ───┤
+     └── Weak/scanned ─► Triage OCR ─► Tesseract ─► OCR rescue models ───┤
                                                ▼
                                     Document Understanding
                                                │

@@ -1,6 +1,6 @@
 {
   "file": "INV-33.pdf",
-  "elapsed_s": 7.993,
+  "elapsed_s": 8.404,
   "ocr_errors": [],
   "groups": [
     {
@@ -17,10 +17,10 @@
           "invoice no"
         ],
         "scores": {
-          "invoice": 17.0,
-          "credit_memo": 2.75,
+          "invoice": 14.5,
+          "credit_memo": 1.5,
           "non_payable": 0.0,
-          "financial": 5.5
+          "financial": 3.0
         }
       },
       "payable_decision": {
@@ -93,7 +93,7 @@
           "erp_gross": "250.0",
           "erp_result": {
             "will_book_gross": 250.0,
-            "currency": "INR"
+            "currency": "GBP"
           },
           "errors": [],
           "warnings": []
