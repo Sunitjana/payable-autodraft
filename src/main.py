@@ -95,6 +95,8 @@ from src.config.settings import (
     UNLIMITED_OCR_MODE,
     MODEL_DEVICE,
     HF_TOKEN,
+    OCR_CONFIDENCE_THRESHOLD,
+    MIN_TEXT_LENGTH,
     SUPERVISOR_ENABLED,
     SUPERVISOR_MODEL,
     SUPERVISOR_ON_CONFLICT,
@@ -720,6 +722,8 @@ class PayableAutoDraftApp:
             unlimited_ocr_mode=UNLIMITED_OCR_MODE,
             model_device=MODEL_DEVICE,
             hf_token=HF_TOKEN,
+            native_min_length=MIN_TEXT_LENGTH,
+            ocr_confidence_threshold=OCR_CONFIDENCE_THRESHOLD,
         )
 
         # --------------------------------------------------------

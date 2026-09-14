@@ -1097,6 +1097,92 @@ class OCRExtractor:
                 }
 
         # ========================================================
+        # STEP 3.5 — BEST-EFFORT PADDLEOCR-VL FALLBACK
+        # ========================================================
+
+        # Unlimited-OCR is meant to rescue a PaddleOCR-VL result
+        # that missed the critical quality gate. But if
+        # Unlimited-OCR is unavailable, misconfigured, or itself
+        # fails (as happens whenever its environment lacks a
+        # compatible dependency), we should not throw away a
+        # PaddleOCR-VL transcription that is clearly usable just
+        # because it fell short of a strict threshold.
+        #
+        # This tier only engages when:
+        #   - PaddleOCR-VL actually produced text, and
+        #   - Unlimited-OCR did not produce a usable replacement.
+        #
+        # The result is still marked with a lower confidence and
+        # flagged as not having passed the critical gate, so
+        # downstream supervisor / validation stages can treat it
+        # with appropriate caution rather than as fully verified.
+
+        paddle_text_value = (result.paddle_text or "").strip()
+
+        if (
+            paddle_text_value
+            and not result.success
+        ):
+
+            paddle_quality_info = result.paddle_quality or {}
+
+            paddle_score = float(
+                paddle_quality_info.get("score", 0.0) or 0.0
+            )
+
+            paddle_usable = bool(
+                paddle_quality_info.get("usable")
+                or paddle_quality_info.get("good")
+                or paddle_score >= 0.5
+            )
+
+            if paddle_usable:
+
+                logger.warning(
+                    "Page %s: Unlimited-OCR unavailable/failed; "
+                    "falling back to PaddleOCR-VL result "
+                    "(score=%.4f) as best-effort evidence.",
+                    page_number,
+                    paddle_score,
+                )
+
+                result.text = paddle_text_value
+
+                result.source = "paddleocr-vl-fallback"
+
+                result.confidence = paddle_score
+
+                result.success = True
+
+                result.fallback_used = True
+
+                result.error = (
+                    "PaddleOCR-VL result did not meet the "
+                    "critical quality threshold and "
+                    "Unlimited-OCR was unavailable; using "
+                    "PaddleOCR-VL text as best-effort evidence. "
+                    "Downstream stages should treat this "
+                    "document as needing review."
+                )
+
+                result.evidence = {
+                    "native": {
+                        "text": native_text,
+                        "quality": native_quality,
+                    },
+                    "paddle": {
+                        "text": paddle_text_value,
+                        "quality": paddle_quality_info,
+                    },
+                    "unlimited": {
+                        "text": result.unlimited_text,
+                        "quality": result.unlimited_quality,
+                    },
+                }
+
+                return result
+
+        # ========================================================
         # STEP 4 — LAST RESORT
         # ========================================================
 
