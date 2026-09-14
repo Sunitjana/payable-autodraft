@@ -167,7 +167,7 @@ class OCRExtractor:
 
         self.paddle_device = (
             paddle_device
-            or "cpu"
+            or None
         )
 
         self.unlimited_ocr_enabled = bool(
@@ -321,43 +321,62 @@ class OCRExtractor:
     @staticmethod
     def _confidence_from_result(
         result: Any,
-    ) -> float:
+    ) -> Optional[float]:
         """
         Extract confidence when the backend provides one.
 
-        Returns 0.0 when confidence is unavailable.
+        Returns None when confidence is unavailable/not reported.
         This does NOT mean the OCR result itself is necessarily
         wrong; it means no verified confidence value was found.
+
+        IMPORTANT: this must return None (not 0.0) when no genuine
+        confidence exists. Coercing "unavailable" into 0.0 makes
+        downstream scoring treat a perfectly good OCR result as if
+        it had 0% recognition confidence, tanking its quality score.
         """
 
         if result is None:
-            return 0.0
+            return None
 
         if isinstance(result, dict):
+
+            # Respect an explicit confidence_available flag when present.
+            if (
+                "confidence_available" in result
+                and not result.get("confidence_available")
+            ):
+                return None
 
             value = (
                 result.get("confidence")
                 if "confidence" in result
-                else result.get("score", 0.0)
+                else result.get("score")
             )
 
         else:
 
+            # Respect an explicit confidence_available flag when present.
+            if (
+                hasattr(result, "confidence_available")
+                and not getattr(result, "confidence_available")
+            ):
+                return None
+
             value = getattr(
                 result,
                 "confidence",
-                0.0,
+                None,
             )
 
             if value is None:
                 value = getattr(
                     result,
                     "score",
-                    0.0,
+                    None,
                 )
 
         if value is None:
-            return 0.0
+            return None
 
         try:
 
@@ -374,7 +393,7 @@ class OCRExtractor:
             ValueError,
         ):
 
-            return 0.0
+            return None
 
     @staticmethod
     def _safe_dict(
@@ -517,7 +536,7 @@ class OCRExtractor:
     def _assess_paddle(
         self,
         text: str,
-        confidence: float,
+        confidence: Optional[float],
     ) -> Dict[str, Any]:
         """
         Assess PaddleOCR-VL output.
@@ -561,7 +580,7 @@ class OCRExtractor:
         self,
         paddle_text: str,
         paddle_quality: Dict[str, Any],
-        paddle_confidence: float,
+        paddle_confidence: Optional[float],
     ) -> bool:
         """
         Decide whether Unlimited-OCR fallback is required.
@@ -1367,9 +1386,6 @@ class OCRExtractor:
         logger.info(
             "OCR backends unloaded."
         )
-
-
-PDFTextExtractor = OCRExtractor
 
 
 # ============================================================

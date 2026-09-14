@@ -103,6 +103,19 @@ class InvoiceExtractor:
         "bill number",
         "bill no.",
         "bill no",
+        # German
+        "rechnungsnummer",
+        "rechnungs-nr.",
+        "rechnungs-nr",
+        "rechnung nr.",
+        "rechnung nr",
+        "rg-nr.",
+        "rg-nr",
+        # Portuguese
+        "numero da fatura",
+        "número da fatura",
+        "fatura n.",
+        "fatura no.",
     ]
 
     INVOICE_DATE_LABELS = [
@@ -111,6 +124,12 @@ class InvoiceExtractor:
         "bill date",
         "issue date",
         "issued date",
+        # German
+        "rechnungsdatum",
+        # Portuguese
+        "data da fatura",
+        "data de emissao",
+        "data de emissão",
     ]
 
     DUE_DATE_LABELS = [
@@ -118,6 +137,14 @@ class InvoiceExtractor:
         "payment due date",
         "payment due",
         "due",
+        # German
+        "faellig am",
+        "fällig am",
+        "zahlbar bis",
+        "zahlungsziel",
+        # Portuguese
+        "data de vencimento",
+        "vencimento",
     ]
 
     PO_LABELS = [
@@ -129,6 +156,14 @@ class InvoiceExtractor:
         "po no.",
         "po no",
         "po #",
+        # German
+        "bestellnummer",
+        "bestell-nr.",
+        "bestell-nr",
+        "auftragsnummer",
+        # Portuguese
+        "numero de encomenda",
+        "número de encomenda",
     ]
 
     TAX_ID_LABELS = [
@@ -143,9 +178,20 @@ class InvoiceExtractor:
         "tax no",
         "vat number",
         "vat no",
+        "vat id",
         "gstin",
         "gst number",
         "tin",
+        # German
+        "ust-idnr.",
+        "ust-idnr",
+        "umsatzsteuer-identifikationsnummer",
+        "steuernummer",
+        "uid",
+        # Portuguese
+        "nif",
+        "numero de identificacao fiscal",
+        "número de identificação fiscal",
     ]
 
     PAYMENT_TERMS_LABELS = [
@@ -154,6 +200,12 @@ class InvoiceExtractor:
         "payment condition",
         "terms of payment",
         "payment conditions",
+        # German
+        "zahlungsbedingungen",
+        "zahlungsziel",
+        # Portuguese
+        "condicoes de pagamento",
+        "condições de pagamento",
     ]
 
     SUPPLIER_LABELS = [
@@ -162,6 +214,12 @@ class InvoiceExtractor:
         "seller",
         "bill from",
         "sold by",
+        # German
+        "lieferant",
+        "verkaeufer",
+        "verkäufer",
+        # Portuguese
+        "fornecedor",
     ]
 
     # ==================================================================
@@ -174,6 +232,14 @@ class InvoiceExtractor:
         "net amount",
         "net total",
         "amount before tax",
+        # German
+        "zwischensumme",
+        "nettobetrag",
+        "gesamtsumme",
+        # Portuguese
+        "subtotal",
+        "total liquido",
+        "total líquido",
     ]
 
     TOTAL_TAX_LABELS = [
@@ -183,12 +249,24 @@ class InvoiceExtractor:
         "vat total",
         "total gst",
         "gst total",
+        # German (e.g. "zzgl. 0 % MwSt")
+        "mwst",
+        "ust",
+        "umsatzsteuer",
+        # Portuguese
+        "total iva",
+        "iva",
     ]
 
     DISCOUNT_LABELS = [
         "total discount",
         "discount total",
         "discount amount",
+        # German
+        "rabatt",
+        "skonto",
+        # Portuguese
+        "desconto",
     ]
 
     CHARGE_LABELS = [
@@ -196,6 +274,14 @@ class InvoiceExtractor:
         "total additional charges",
         "additional charges",
         "other charges",
+        # German
+        "versandkosten",
+        "nebenkosten",
+        "zusaetzliche kosten",
+        "zusätzliche kosten",
+        # Portuguese
+        "taxas adicionais",
+        "portes",
     ]
 
     # Do NOT include generic "total".
@@ -208,14 +294,6 @@ class InvoiceExtractor:
     #   Balance After Withholding
     #
     GROSS_LABELS = [
-        "total(usd)",
-        "total (usd)",
-        "total(eur)",
-        "total (eur)",
-        "total(gbp)",
-        "total (gbp)",
-        "total incl gst",
-        "total including gst",
         "grand total including vat",
         "grand total including tax",
         "grand total",
@@ -227,6 +305,15 @@ class InvoiceExtractor:
         "total due",
         "amount due",
         "balance due",
+        # German
+        "endbetrag",
+        "gesamtbetrag",
+        "rechnungsbetrag",
+        "zu zahlender betrag",
+        # Portuguese
+        "valor total",
+        "total a pagar",
+        "montante total",
     ]
 
     # ==================================================================
@@ -1011,27 +1098,6 @@ class InvoiceExtractor:
                     raw
                 )
 
-                if value is not None:
-                    return value
-
-            # Labels and values are often separated into adjacent PDF
-            # text blocks without punctuation, for example TOTAL(USD)
-            # followed by 91,580.50 on the next line.
-            pattern = (
-                label_pattern
-                + r"\s*\n\s*"
-                + r"([()\-\d][\d,.]*)"
-                + r"(?=\s*(?:\n|\||$))"
-            )
-
-            matches = re.findall(
-                pattern,
-                text,
-                flags=re.IGNORECASE,
-            )
-
-            for raw in reversed(matches):
-                value = cls._parse_decimal(raw)
                 if value is not None:
                     return value
 

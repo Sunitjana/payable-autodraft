@@ -79,13 +79,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 
-if __package__ in (None, ""):
-    sys.path.insert(
-        0,
-        str(Path(__file__).resolve().parents[1]),
-    )
-
-
 # ============================================================
 # CONFIGURATION
 # ============================================================
@@ -341,6 +334,131 @@ def validation_ok(result: Any) -> bool:
     return False
 
 
+def extract_master_records(
+    data: Any,
+    *candidate_keys: str,
+) -> List[Dict[str, Any]]:
+    """
+    Unwrap a loaded master-data JSON file into the plain
+    list[dict] the matchers expect.
+
+    Every supplied master-data file wraps its actual record list
+    under a named key alongside a "_comment" field, e.g.:
+
+        {"_comment": "...", "suppliers": [ {...}, {...} ]}
+        {"_comment": "...", "purchase_orders": [ {...} ]}
+
+    SupplierMatcher / POMatcher / TaxMatcher / PaymentTermsMatcher
+    all take a bare list[dict] in their constructors and do not
+    unwrap this themselves — passing the raw loaded dict silently
+    breaks every match (iterating a dict yields its string keys,
+    and calling .get() on a string then fails, which is swallowed
+    by the caller's broad except and looks like "no match").
+
+    This unwraps that shape robustly:
+      - already a list -> returned as-is (dict items only)
+      - a dict with one of candidate_keys holding a list -> that list
+      - otherwise, the first non-"_"-prefixed list-of-dicts found
+        anywhere at the top level (defensive fallback if the schema
+        name changes)
+    """
+
+    if isinstance(data, list):
+        return [
+            item
+            for item in data
+            if isinstance(item, dict)
+        ]
+
+    if isinstance(data, dict):
+
+        for key in candidate_keys:
+
+            value = data.get(key)
+
+            if isinstance(value, list):
+                return [
+                    item
+                    for item in value
+                    if isinstance(item, dict)
+                ]
+
+        for key, value in data.items():
+
+            if isinstance(key, str) and key.startswith("_"):
+                continue
+
+            if (
+                isinstance(value, list)
+                and value
+                and all(
+                    isinstance(item, dict)
+                    for item in value
+                )
+            ):
+                return value
+
+    return []
+
+
+def infer_chart_of_books_account_name(
+    matcher: Any,
+    text: str,
+) -> Optional[str]:
+    """
+    Identify which chart-of-books org unit a document belongs to,
+    from real evidence in the document text — never invented.
+
+    ChartOfBooksMatcher.match() needs a candidate name (or codes)
+    to look up; nothing in InvoiceHeader captures the buyer/
+    recipient identity (it only captures the supplier side), so
+    there is no structured field to hand it. Instead, this checks
+    which (if any) exact, known org name from the master data
+    literally appears in the document text — conservative by
+    construction: it can only ever surface a name that genuinely
+    exists in both the master data and the document, and it
+    deliberately returns nothing on any ambiguity rather than
+    guessing.
+    """
+
+    if not text or not getattr(matcher, "accounts", None):
+        return None
+
+    normalized_text = matcher.normalize(text)
+
+    if not normalized_text:
+        return None
+
+    candidate_names: set = set()
+
+    for record in matcher.accounts:
+        for key in (
+            "location_name",
+            "business_unit_name",
+            "company_name",
+        ):
+            name = record.get(key)
+
+            if not name:
+                continue
+
+            normalized_name = matcher.normalize(name)
+
+            if (
+                normalized_name
+                and normalized_name in normalized_text
+            ):
+                candidate_names.add(name)
+
+    if len(candidate_names) == 1:
+        return next(iter(candidate_names))
+
+    # Zero or ambiguous (multiple distinct org names found in the
+    # same document): leave it to the matcher to report "not
+    # found" rather than guessing between them.
+    return None
+
+
 # ============================================================
 # MASTER DATA
 # ============================================================
@@ -361,21 +479,23 @@ def load_json_file(path: Path) -> Any:
 def load_master_data() -> Dict[str, Any]:
     logger.info("Loading master data...")
 
-    sources = {
-        "suppliers": (SUPPLIERS_FILE, "suppliers"),
-        "tax_master": (TAX_MASTER_FILE, "taxes"),
-        "chart_of_books": (CHART_OF_BOOKS_FILE, "companies"),
-        "payment_terms": (PAYMENT_TERMS_FILE, "payment_terms"),
-        "po_master": (PO_MASTER_FILE, "purchase_orders"),
+    data = {
+        "suppliers": load_json_file(
+            SUPPLIERS_FILE
+        ),
+        "tax_master": load_json_file(
+            TAX_MASTER_FILE
+        ),
+        "chart_of_books": load_json_file(
+            CHART_OF_BOOKS_FILE
+        ),
+        "payment_terms": load_json_file(
+            PAYMENT_TERMS_FILE
+        ),
+        "po_master": load_json_file(
+            PO_MASTER_FILE
+        ),
     }
-
-    data: Dict[str, Any] = {}
-    for name, (path, collection_key) in sources.items():
-        raw = load_json_file(path)
-        if isinstance(raw, dict) and collection_key in raw:
-            data[name] = raw[collection_key]
-        else:
-            data[name] = raw
 
     logger.info("Master data loaded successfully.")
 
@@ -512,6 +632,54 @@ def get_page_number(
     return default
 
 
+def processed_page_to_splitter_record(
+    page: Dict[str, Any],
+    index: int,
+) -> SplitterPageRecord:
+    """
+    Convert one of our OCR-stage page dicts into the PageRecord
+    shape DocumentSplitter.split() actually expects.
+
+    DocumentSplitter needs the *final selected* text for each page
+    (whichever of native/PaddleOCR-VL/Unlimited-OCR text ended up
+    being used) so it can detect document-start signals — not the
+    raw native-only text.
+    """
+
+    ocr = page.get(
+        "ocr",
+        {},
+    ) or {}
+
+    text = (
+        get_attr(
+            ocr,
+            "text",
+            default="",
+        )
+        or page.get(
+            "native_text",
+            "",
+        )
+        or ""
+    )
+
+    page_number = get_page_number(
+        page,
+        index,
+    )
+
+    return SplitterPageRecord(
+        page_number=page_number,
+        text=str(text),
+        metadata={
+            "image_path": page.get(
+                "image_path"
+            ),
+        },
+    )
+
+
 # ============================================================
 # PAYABLE APPLICATION
 # ============================================================
@@ -577,23 +745,40 @@ class PayableAutoDraftApp:
         # --------------------------------------------------------
 
         self.supplier_matcher = SupplierMatcher(
-            self.master_data["suppliers"]
+            extract_master_records(
+                self.master_data["suppliers"],
+                "suppliers",
+            )
         )
 
         self.po_matcher = POMatcher(
-            self.master_data["po_master"]
+            extract_master_records(
+                self.master_data["po_master"],
+                "purchase_orders",
+                "po_master",
+            )
         )
 
         self.tax_matcher = TaxMatcher(
-            self.master_data["tax_master"]
+            extract_master_records(
+                self.master_data["tax_master"],
+                "taxes",
+                "tax_master",
+            )
         )
 
         self.payment_terms_matcher = (
             PaymentTermsMatcher(
-                self.master_data["payment_terms"]
+                extract_master_records(
+                    self.master_data["payment_terms"],
+                    "payment_terms",
+                )
             )
         )
 
+        # ChartOfBooksMatcher recursively flattens nested
+        # structures itself (companies -> business_units ->
+        # locations), so it can keep taking the raw loaded JSON.
         self.chart_of_books_matcher = (
             ChartOfBooksMatcher(
                 self.master_data["chart_of_books"]
@@ -637,11 +822,30 @@ class PayableAutoDraftApp:
 
         self.master_validator = (
             MasterValidator(
-                suppliers=self.master_data["suppliers"],
-                po_master=self.master_data["po_master"],
-                tax_master=self.master_data["tax_master"],
-                payment_terms=self.master_data["payment_terms"],
-                chart_of_books=self.master_data["chart_of_books"],
+                suppliers=extract_master_records(
+                    self.master_data["suppliers"],
+                    "suppliers",
+                ),
+                po_master=extract_master_records(
+                    self.master_data["po_master"],
+                    "purchase_orders",
+                    "po_master",
+                ),
+                tax_master=extract_master_records(
+                    self.master_data["tax_master"],
+                    "taxes",
+                    "tax_master",
+                ),
+                payment_terms=extract_master_records(
+                    self.master_data["payment_terms"],
+                    "payment_terms",
+                ),
+                # chart_of_books param is typed Any and
+                # self-flattens nested structures, same as
+                # ChartOfBooksMatcher.
+                chart_of_books=(
+                    self.master_data["chart_of_books"]
+                ),
             )
         )
 
@@ -928,89 +1132,90 @@ class PayableAutoDraftApp:
         # ----------------------------------------------------
         # 7. Logical splitting
         # ----------------------------------------------------
+        #
+        # DocumentSplitter.split() expects its own PageRecord
+        # dataclass (page_number/text/metadata) and returns
+        # PayableDocument objects — each holding *combined* text
+        # for a group of pages plus that group's page_numbers, not
+        # a list of page dicts. process_logical_payable(), on the
+        # other hand, expects a list of our original OCR-stage page
+        # dicts (it re-derives combined text itself and needs
+        # per-page "ocr"/"image_path" data). So: convert on the way
+        # in, and map page_numbers back to the original page dicts
+        # on the way out.
+        # ----------------------------------------------------
+
+        splitter_input = [
+            processed_page_to_splitter_record(
+                page,
+                index,
+            )
+            for index, page in enumerate(
+                processed_pages,
+                start=1,
+            )
+        ]
 
         try:
-
-            splitter_pages = [
-                SplitterPageRecord(
-                    page_number=page["page_number"],
-                    text=get_attr(
-                        page.get("ocr", {}),
-                        "text",
-                        default=page.get("native_text", ""),
-                    ) or page.get("native_text", ""),
-                    metadata={
-                        "image_path": page.get("image_path"),
-                        "source_pdf": str(pdf_path),
-                    },
+            payable_documents = (
+                self.document_splitter.split(
+                    splitter_input,
+                    pdf_path.stem,
                 )
-                for page in processed_pages
-            ]
-
-            payable_documents = self.document_splitter.split(
-                splitter_pages,
-                pdf_path.stem,
             )
-
-        except TypeError:
-
-            # Compatibility fallback.
-            try:
-                payable_documents = (
-                    self.document_splitter.split(
-                        processed_pages
-                    )
-                )
-            except Exception as exc:
-                logger.warning(
-                    "Document splitting failed: %s",
-                    exc,
-                )
-                payable_documents = [
-                    processed_pages
-                ]
-
         except Exception as exc:
-
             logger.warning(
                 "Document splitting failed: %s",
                 exc,
             )
+            payable_documents = None
 
-            payable_documents = [
-                processed_pages
-            ]
-
-        if not payable_documents:
-            payable_documents = [
-                processed_pages
-            ]
-
-        page_by_number = {
-            page["page_number"]: page
-            for page in processed_pages
+        pages_by_number: Dict[
+            int, Dict[str, Any]
+        ] = {
+            get_page_number(page, index): page
+            for index, page in enumerate(
+                processed_pages,
+                start=1,
+            )
         }
 
-        normalized_documents: List[List[Dict[str, Any]]] = []
-        for logical_document in payable_documents:
-            if isinstance(logical_document, list):
-                normalized_documents.append(logical_document)
-                continue
+        logical_page_groups: List[
+            List[Dict[str, Any]]
+        ] = []
 
-            page_numbers = getattr(
-                logical_document,
-                "page_numbers",
-                [],
-            )
-            pages_for_document = [
-                page_by_number[number]
-                for number in page_numbers
-                if number in page_by_number
+        if payable_documents:
+
+            for document in payable_documents:
+
+                page_numbers = (
+                    get_attr(
+                        document,
+                        "page_numbers",
+                        default=[],
+                    )
+                    or []
+                )
+
+                group = [
+                    pages_by_number[number]
+                    for number in page_numbers
+                    if number in pages_by_number
+                ]
+
+                if group:
+                    logical_page_groups.append(
+                        group
+                    )
+
+        if not logical_page_groups:
+            # No splitter output (splitting failed, found nothing,
+            # or every logical document failed to map back to real
+            # pages): fall back to treating the whole PDF as one
+            # logical payable rather than losing the document.
+            logical_page_groups = [
+                processed_pages
             ]
-            if pages_for_document:
-                normalized_documents.append(pages_for_document)
-
-        payable_documents = normalized_documents or [processed_pages]
 
         # ----------------------------------------------------
         # 8. Process logical payables
@@ -1020,15 +1225,15 @@ class PayableAutoDraftApp:
             Dict[str, Any]
         ] = []
 
-        for document_index, logical_document in enumerate(
-            payable_documents,
+        for document_index, logical_pages in enumerate(
+            logical_page_groups,
             start=1,
         ):
 
             draft = (
                 self.process_logical_payable(
                     pdf_path=pdf_path,
-                    pages=logical_document,
+                    pages=logical_pages,
                     document_index=document_index,
                 )
             )
@@ -1214,6 +1419,11 @@ class PayableAutoDraftApp:
                     )
                 )
 
+                # QwenVL.verify() accepts one image (image_path)
+                # and parameter names ocr_primary/ocr_fallback —
+                # not a list of images or primary_ocr/fallback_ocr.
+                # Use the first page's image as the representative
+                # page for verification.
                 supervisor_result = (
                     self.qwen.verify(
                         image_path=image_paths[0],
@@ -1406,33 +1616,27 @@ class PayableAutoDraftApp:
                 )
 
         # Chart of books
+        #
+        # InvoiceHeader has no buyer/recipient field at all (it
+        # only captures the supplier side), so there is nothing
+        # structured to pass as account_code/account_name/category
+        # — those keys never exist on header_data. Instead, look
+        # for a known org name from chart_of_books.json that
+        # actually appears in the document text.
         account = None
 
         try:
 
-            account_code = (
-                header_data.get(
-                    "account_code"
-                )
-            )
-
-            account_name = (
-                header_data.get(
-                    "account_name"
-                )
-            )
-
-            category = (
-                header_data.get(
-                    "category"
+            buyer_account_name = (
+                infer_chart_of_books_account_name(
+                    self.chart_of_books_matcher,
+                    text,
                 )
             )
 
             account = (
                 self.chart_of_books_matcher.match(
-                    account_code=account_code,
-                    account_name=account_name,
-                    category=category,
+                    account_name=buyer_account_name,
                 )
             )
 
@@ -1444,40 +1648,115 @@ class PayableAutoDraftApp:
             )
 
         # ----------------------------------------------------
+        # Build autodraft
+        # ----------------------------------------------------
+        #
+        # MasterValidator.validate() and FinancialValidator.
+        # validate() both take the single, already-built canonical
+        # AUTODRAFT_SCHEMA payload dict (exactly like
+        # SchemaValidator.validate() and ERPValidator.validate()
+        # do below) — not the raw extracted components as separate
+        # keyword arguments. So the payload has to be built first;
+        # master/financial validation run against its output.
+        # ----------------------------------------------------
+
+        try:
+
+            draft_result = (
+                self.autodraft_builder.build(
+                    header=header,
+                    line_items=line_items,
+                    taxes=taxes,
+                    discounts=discounts,
+                    charges=charges,
+                    supplier_result=supplier,
+                    po_result=po,
+                    tax_results=matched_taxes,
+                    payment_terms_result=(
+                        payment_terms
+                    ),
+                    account_result=account,
+                    supervisor_result=(
+                        safe_object(
+                            supervisor_result
+                        )
+                    ),
+                )
+            )
+
+        except Exception as exc:
+
+            logger.exception(
+                "Autodraft construction failed."
+            )
+
+            return {
+                "status": "REVIEW",
+                "document_index": document_index,
+                "reason": (
+                    "Autodraft construction failed."
+                ),
+                "error": str(exc),
+            }
+
+        if not get_attr(
+            draft_result,
+            "success",
+            default=False,
+        ):
+
+            return {
+                "status": "REVIEW",
+                "document_index": document_index,
+                "reason": (
+                    "Autodraft builder rejected "
+                    "the document."
+                ),
+                "errors": safe_object(
+                    get_attr(
+                        draft_result,
+                        "errors",
+                        default=[],
+                    )
+                ),
+                "warnings": safe_object(
+                    get_attr(
+                        draft_result,
+                        "warnings",
+                        default=[],
+                    )
+                ),
+            }
+
+        draft_payload = get_attr(
+            draft_result,
+            "payload",
+            default=None,
+        )
+
+        if not isinstance(
+            draft_payload,
+            dict,
+        ):
+            return {
+                "status": "REVIEW",
+                "document_index": document_index,
+                "reason": (
+                    "Autodraft builder did not "
+                    "produce a dictionary payload."
+                ),
+            }
+
+        # ----------------------------------------------------
         # Master validation
         # ----------------------------------------------------
 
         try:
 
-            draft_result = self.autodraft_builder.build(
-                header=header,
-                line_items=line_items,
-                taxes=taxes,
-                discounts=discounts,
-                charges=charges,
-                supplier_result=supplier,
-                po_result=po,
-                tax_results=matched_taxes,
-                payment_terms_result=payment_terms,
-                account_result=account,
-            )
-
-            draft_payload = get_attr(
-                draft_result,
-                "payload",
-                default=None,
-            )
-
-            if not get_attr(draft_result, "success", default=False) or not isinstance(draft_payload, dict):
-                return {
-                    "status": "REVIEW",
-                    "document_index": document_index,
-                    "reason": "Autodraft construction failed.",
-                    "errors": safe_object(get_attr(draft_result, "errors", default=[])),
-                }
-
-            master_validation = self.master_validator.validate(
-                draft_payload
+            master_validation = (
+                self.master_validator.validate(
+                    draft_payload
+                )
             )
 
         except Exception as exc:
@@ -1502,22 +1781,12 @@ class PayableAutoDraftApp:
         # Financial validation
         # ----------------------------------------------------
 
-        gross_amount = (
-            header_data.get(
-                "gross_total"
-            )
-            or header_data.get(
-                "gross_amount"
-            )
-            or header_data.get(
-                "grand_total"
-            )
-        )
-
         try:
 
-            financial_validation = self.financial_validator.validate(
-                draft_payload
+            financial_validation = (
+                self.financial_validator.validate(
+                    draft_payload
+                )
             )
 
         except Exception as exc:
@@ -1625,8 +1894,12 @@ class PayableAutoDraftApp:
             confidence_result = (
                 self.confidence_engine.calculate(
                     ocr_score=ocr_confidence,
-                    extraction_score=extraction_confidence,
-                    supervisor_score=supervisor_confidence,
+                    extraction_score=(
+                        extraction_confidence
+                    ),
+                    supervisor_score=(
+                        supervisor_confidence
+                    ),
                     master_data_score=(
                         1.0
                         if master_valid
@@ -1637,32 +1910,29 @@ class PayableAutoDraftApp:
                         if financial_valid
                         else 0.0
                     ),
-                    has_unresolved_conflict=supervisor_conflict,
-                    has_missing_required_field=not required_fields_present,
-                )
-            )
-
-        except TypeError:
-
-            # Compatibility with a calculate() implementation
-            # accepting only the core arguments.
-            confidence_result = (
-                self.confidence_engine.calculate(
-                    ocr_score=ocr_confidence,
-                    extraction_score=extraction_confidence,
-                    supervisor_score=supervisor_confidence,
-                    master_data_score=(
-                        1.0
-                        if master_valid
-                        else 0.0
+                    has_unresolved_conflict=(
+                        supervisor_conflict
                     ),
-                    financial_score=(
-                        1.0
-                        if financial_valid
-                        else 0.0
+                    has_missing_required_field=(
+                        not required_fields_present
                     ),
                 )
             )
+
+        except Exception as exc:
+
+            logger.exception(
+                "Confidence calculation failed."
+            )
+
+            return {
+                "status": "REVIEW",
+                "document_index": document_index,
+                "reason": (
+                    "Confidence calculation failed."
+                ),
+                "error": str(exc),
+            }
 
         decision = get_attr(
             confidence_result,
@@ -1718,97 +1988,6 @@ class PayableAutoDraftApp:
                 ),
                 "financial_validation": safe_object(
                     financial_validation
-                ),
-            }
-
-        # ----------------------------------------------------
-        # Build autodraft
-        # ----------------------------------------------------
-
-        try:
-
-            draft_result = (
-                self.autodraft_builder.build(
-                    header=header,
-                    line_items=line_items,
-                    taxes=taxes,
-                    discounts=discounts,
-                    charges=charges,
-                    supplier_result=supplier,
-                    po_result=po,
-                    tax_results=matched_taxes,
-                    payment_terms_result=(
-                        payment_terms
-                    ),
-                    account_result=account,
-                    supervisor_result=(
-                        safe_object(
-                            supervisor_result
-                        )
-                    ),
-                )
-            )
-
-        except Exception as exc:
-
-            logger.exception(
-                "Autodraft construction failed."
-            )
-
-            return {
-                "status": "REVIEW",
-                "document_index": document_index,
-                "reason": (
-                    "Autodraft construction failed."
-                ),
-                "error": str(exc),
-            }
-
-        if not get_attr(
-            draft_result,
-            "success",
-            default=False,
-        ):
-
-            return {
-                "status": "REVIEW",
-                "document_index": document_index,
-                "reason": (
-                    "Autodraft builder rejected "
-                    "the document."
-                ),
-                "errors": safe_object(
-                    get_attr(
-                        draft_result,
-                        "errors",
-                        default=[],
-                    )
-                ),
-                "warnings": safe_object(
-                    get_attr(
-                        draft_result,
-                        "warnings",
-                        default=[],
-                    )
-                ),
-            }
-
-        draft_payload = get_attr(
-            draft_result,
-            "payload",
-            default=None,
-        )
-
-        if not isinstance(
-            draft_payload,
-            dict,
-        ):
-            return {
-                "status": "REVIEW",
-                "document_index": document_index,
-                "reason": (
-                    "Autodraft builder did not "
-                    "produce a dictionary payload."
                 ),
             }
 
@@ -2087,54 +2266,11 @@ class PayableAutoDraftApp:
             / f"{pdf_path.stem}.json"
         )
 
-        payables: List[Dict[str, Any]] = []
-        declined: List[Dict[str, Any]] = []
-
-        for draft in result.get("drafts", []):
-            if draft.get("status") == "ACCEPTED":
-                payload = draft.get("autodraft")
-                if isinstance(payload, dict):
-                    payables.append(payload)
-                continue
-
-            declined.append(
-                {
-                    "doc_type": draft.get(
-                        "doc_type",
-                        "UNKNOWN",
-                    ),
-                    "reason": draft.get(
-                        "reason",
-                        "Document was not accepted for booking.",
-                    ),
-                }
-            )
-
-        if result.get("status") == "DECLINED" and not declined:
-            declined.append(
-                {
-                    "doc_type": result.get(
-                        "doc_type",
-                        "UNKNOWN",
-                    ),
-                    "reason": result.get(
-                        "reason",
-                        "Document was declined.",
-                    ),
-                }
-            )
-
-        output_result = {
-            "file": pdf_path.name,
-            "payables": payables,
-            "declined": declined,
-        }
-
         # save_json's signature is save_json(path, data) — pass the
         # output path first and the result dict second.
         save_json(
             output_path,
-            output_result,
+            result,
         )
 
         logger.info(

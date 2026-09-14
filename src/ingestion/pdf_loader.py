@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator, Optional
 
-import fitz
+import pymupdf
 
 
 @dataclass
@@ -45,21 +45,11 @@ class PDFLoader:
         max_pages: int = 1000,
     ) -> None:
 
-        if isinstance(
-            max_pages,
-            bool,
-        ) or not isinstance(
-            max_pages,
-            int,
-        ):
-            raise TypeError(
-                "max_pages must be an integer."
-            )
+        if isinstance(max_pages, bool) or not isinstance(max_pages, int):
+            raise TypeError("max_pages must be an integer.")
 
         if max_pages < 1:
-            raise ValueError(
-                "max_pages must be at least 1."
-            )
+            raise ValueError("max_pages must be at least 1.")
 
         self.max_pages = max_pages
 
@@ -78,19 +68,13 @@ class PDFLoader:
         path = Path(pdf_path)
 
         if not path.exists():
-            raise FileNotFoundError(
-                f"PDF not found: {path}"
-            )
+            raise FileNotFoundError(f"PDF not found: {path}")
 
         if not path.is_file():
-            raise ValueError(
-                f"PDF path is not a file: {path}"
-            )
+            raise ValueError(f"PDF path is not a file: {path}")
 
         if path.suffix.lower() != ".pdf":
-            raise ValueError(
-                f"Expected a PDF file: {path}"
-            )
+            raise ValueError(f"Expected a PDF file: {path}")
 
         return path
 
@@ -101,7 +85,7 @@ class PDFLoader:
     @staticmethod
     def _open_document(
         pdf_path: Path,
-    ) -> fitz.Document:
+    ) -> pymupdf.Document:
         """
         Open a PDF safely.
 
@@ -109,16 +93,10 @@ class PDFLoader:
         """
 
         try:
-
-            document = fitz.open(
-                str(pdf_path)
-            )
+            document = pymupdf.open(str(pdf_path))
 
         except Exception as exc:
-
-            raise ValueError(
-                f"Could not open PDF: {pdf_path}"
-            ) from exc
+            raise ValueError(f"Could not open PDF: {pdf_path}") from exc
 
         # --------------------------------------------------------------
         # Encrypted PDF
@@ -127,26 +105,15 @@ class PDFLoader:
         if document.is_encrypted:
 
             try:
-                authenticated = (
-                    document.authenticate("")
-                )
+                authenticated = document.authenticate("")
 
             except Exception:
-
-                document.close()
-
-                raise ValueError(
-                    f"Encrypted PDF requires a password: "
-                    f"{pdf_path}"
-                )
+                authenticated = False
 
             if not authenticated:
-
                 document.close()
-
                 raise ValueError(
-                    f"Encrypted PDF requires a password: "
-                    f"{pdf_path}"
+                    f"Encrypted PDF requires a password: {pdf_path}"
                 )
 
         return document
@@ -157,7 +124,7 @@ class PDFLoader:
 
     def _validate_page_count(
         self,
-        document: fitz.Document,
+        document: pymupdf.Document,
         pdf_path: Path,
     ) -> int:
         """
@@ -167,13 +134,9 @@ class PDFLoader:
         page_count = len(document)
 
         if page_count == 0:
-
-            raise ValueError(
-                f"PDF contains no pages: {pdf_path}"
-            )
+            raise ValueError(f"PDF contains no pages: {pdf_path}")
 
         if page_count > self.max_pages:
-
             raise ValueError(
                 f"PDF has {page_count} pages, "
                 f"which exceeds MAX_PAGES={self.max_pages}"
@@ -193,16 +156,10 @@ class PDFLoader:
         Load a PDF and extract native text from every page.
         """
 
-        pdf_path = self._validate_path(
-            pdf_path
-        )
-
-        document = self._open_document(
-            pdf_path
-        )
+        pdf_path = self._validate_path(pdf_path)
+        document = self._open_document(pdf_path)
 
         try:
-
             page_count = self._validate_page_count(
                 document,
                 pdf_path,
@@ -210,36 +167,23 @@ class PDFLoader:
 
             pages: list[PDFPage] = []
 
-            for index, page in enumerate(
-                document
-            ):
-
+            for index, page in enumerate(document):
                 page_number = index + 1
 
                 try:
-
-                    text = (
-                        page.get_text("text")
-                        or ""
-                    )
-
+                    text = page.get_text("text") or ""
                     rect = page.rect
 
                     pages.append(
                         PDFPage(
                             page_number=page_number,
                             text=text,
-                            width=float(
-                                rect.width
-                            ),
-                            height=float(
-                                rect.height
-                            ),
+                            width=float(rect.width),
+                            height=float(rect.height),
                         )
                     )
 
                 except Exception as exc:
-
                     raise ValueError(
                         f"Could not process page "
                         f"{page_number} of PDF: "
@@ -253,8 +197,8 @@ class PDFLoader:
             )
 
         finally:
-
-            document.close()
+            if not document.is_closed:
+                document.close()
 
     # ==================================================================
     # ITERATE PAGES
@@ -271,49 +215,29 @@ class PDFLoader:
         records when streaming is preferred.
         """
 
-        pdf_path = self._validate_path(
-            pdf_path
-        )
-
-        document = self._open_document(
-            pdf_path
-        )
+        pdf_path = self._validate_path(pdf_path)
+        document = self._open_document(pdf_path)
 
         try:
-
             self._validate_page_count(
                 document,
                 pdf_path,
             )
 
-            for index, page in enumerate(
-                document
-            ):
-
+            for index, page in enumerate(document):
                 page_number = index + 1
 
                 try:
-
                     rect = page.rect
 
                     yield PDFPage(
                         page_number=page_number,
-                        text=(
-                            page.get_text(
-                                "text"
-                            )
-                            or ""
-                        ),
-                        width=float(
-                            rect.width
-                        ),
-                        height=float(
-                            rect.height
-                        ),
+                        text=page.get_text("text") or "",
+                        width=float(rect.width),
+                        height=float(rect.height),
                     )
 
                 except Exception as exc:
-
                     raise ValueError(
                         f"Could not process page "
                         f"{page_number} of PDF: "
@@ -321,8 +245,8 @@ class PDFLoader:
                     ) from exc
 
         finally:
-
-            document.close()
+            if not document.is_closed:
+                document.close()
 
     # ==================================================================
     # NATIVE TEXT
@@ -338,9 +262,7 @@ class PDFLoader:
         No OCR is performed here.
         """
 
-        document = self.load(
-            pdf_path
-        )
+        document = self.load(pdf_path)
 
         return "\n".join(
             page.text.strip()
@@ -360,24 +282,18 @@ class PDFLoader:
         Return the number of pages in a PDF.
         """
 
-        pdf_path = self._validate_path(
-            pdf_path
-        )
-
-        document = self._open_document(
-            pdf_path
-        )
+        pdf_path = self._validate_path(pdf_path)
+        document = self._open_document(pdf_path)
 
         try:
-
             return self._validate_page_count(
                 document,
                 pdf_path,
             )
 
         finally:
-
-            document.close()
+            if not document.is_closed:
+                document.close()
 
     # ==================================================================
     # PDF INFORMATION
@@ -391,16 +307,10 @@ class PDFLoader:
         Return basic PDF metadata.
         """
 
-        pdf_path = self._validate_path(
-            pdf_path
-        )
-
-        document = self._open_document(
-            pdf_path
-        )
+        pdf_path = self._validate_path(pdf_path)
+        document = self._open_document(pdf_path)
 
         try:
-
             page_count = self._validate_page_count(
                 document,
                 pdf_path,
@@ -410,15 +320,12 @@ class PDFLoader:
                 "path": str(pdf_path),
                 "filename": pdf_path.name,
                 "page_count": page_count,
-                "metadata": (
-                    document.metadata
-                    or {}
-                ),
+                "metadata": document.metadata or {},
             }
 
         finally:
-
-            document.close()
+            if not document.is_closed:
+                document.close()
 
 
 # ======================================================================
@@ -437,11 +344,9 @@ def _run_tests() -> None:
         # Create test PDF
         # --------------------------------------------------------------
 
-        pdf_path = (
-            root / "test.pdf"
-        )
+        pdf_path = root / "test.pdf"
 
-        document = fitz.open()
+        document = pymupdf.open()
 
         page_one = document.new_page(
             width=612,
@@ -469,151 +374,75 @@ def _run_tests() -> None:
             }
         )
 
-        document.save(
-            str(pdf_path)
-        )
-
+        document.save(str(pdf_path))
         document.close()
 
         # --------------------------------------------------------------
         # Loader
         # --------------------------------------------------------------
 
-        loader = PDFLoader(
-            max_pages=10
-        )
+        loader = PDFLoader(max_pages=10)
 
         # --------------------------------------------------------------
         # load()
         # --------------------------------------------------------------
 
-        loaded = loader.load(
-            pdf_path
-        )
+        loaded = loader.load(pdf_path)
 
         assert loaded.path == pdf_path
         assert loaded.page_count == 2
         assert len(loaded.pages) == 2
 
-        assert (
-            loaded.pages[0].page_number
-            == 1
-        )
-
-        assert (
-            "INV-001"
-            in loaded.pages[0].text
-        )
-
-        assert (
-            loaded.pages[0].width
-            == 612.0
-        )
-
-        assert (
-            loaded.pages[0].height
-            == 792.0
-        )
+        assert loaded.pages[0].page_number == 1
+        assert "INV-001" in loaded.pages[0].text
+        assert loaded.pages[0].width == 612.0
+        assert loaded.pages[0].height == 792.0
 
         # --------------------------------------------------------------
         # iter_pages()
         # --------------------------------------------------------------
 
-        streamed = list(
-            loader.iter_pages(
-                pdf_path
-            )
-        )
+        streamed = list(loader.iter_pages(pdf_path))
 
         assert len(streamed) == 2
-
-        assert (
-            streamed[0].page_number
-            == 1
-        )
-
-        assert (
-            streamed[1].page_number
-            == 2
-        )
-
-        assert (
-            "123.45"
-            in streamed[1].text
-        )
+        assert streamed[0].page_number == 1
+        assert streamed[1].page_number == 2
+        assert "123.45" in streamed[1].text
 
         # --------------------------------------------------------------
         # extract_native_text()
         # --------------------------------------------------------------
 
-        native_text = (
-            loader.extract_native_text(
-                pdf_path
-            )
-        )
+        native_text = loader.extract_native_text(pdf_path)
 
-        assert (
-            "INV-001"
-            in native_text
-        )
-
-        assert (
-            "123.45"
-            in native_text
-        )
+        assert "INV-001" in native_text
+        assert "123.45" in native_text
 
         # --------------------------------------------------------------
         # get_page_count()
         # --------------------------------------------------------------
 
-        assert (
-            loader.get_page_count(
-                pdf_path
-            )
-            == 2
-        )
+        assert loader.get_page_count(pdf_path) == 2
 
         # --------------------------------------------------------------
         # get_pdf_info()
         # --------------------------------------------------------------
 
-        info = loader.get_pdf_info(
-            pdf_path
-        )
+        info = loader.get_pdf_info(pdf_path)
 
-        assert (
-            info["filename"]
-            == "test.pdf"
-        )
-
-        assert (
-            info["page_count"]
-            == 2
-        )
-
-        assert (
-            info["metadata"]["title"]
-            == "Test Invoice"
-        )
+        assert info["filename"] == "test.pdf"
+        assert info["page_count"] == 2
+        assert info["metadata"]["title"] == "Test Invoice"
 
         # --------------------------------------------------------------
         # Missing PDF
         # --------------------------------------------------------------
 
-        missing = (
-            root / "missing.pdf"
-        )
+        missing = root / "missing.pdf"
 
         try:
-
-            loader.load(
-                missing
-            )
-
-            raise AssertionError(
-                "Missing PDF did not raise."
-            )
-
+            loader.load(missing)
+            raise AssertionError("Missing PDF did not raise.")
         except FileNotFoundError:
             pass
 
@@ -621,25 +450,12 @@ def _run_tests() -> None:
         # Non-PDF
         # --------------------------------------------------------------
 
-        text_file = (
-            root / "test.txt"
-        )
-
-        text_file.write_text(
-            "not a pdf",
-            encoding="utf-8",
-        )
+        text_file = root / "test.txt"
+        text_file.write_text("not a pdf", encoding="utf-8")
 
         try:
-
-            loader.load(
-                text_file
-            )
-
-            raise AssertionError(
-                "Non-PDF did not raise."
-            )
-
+            loader.load(text_file)
+            raise AssertionError("Non-PDF did not raise.")
         except ValueError:
             pass
 
@@ -648,15 +464,8 @@ def _run_tests() -> None:
         # --------------------------------------------------------------
 
         try:
-
-            loader.load(
-                root
-            )
-
-            raise AssertionError(
-                "Directory did not raise."
-            )
-
+            loader.load(root)
+            raise AssertionError("Directory did not raise.")
         except ValueError:
             pass
 
@@ -665,28 +474,14 @@ def _run_tests() -> None:
         # --------------------------------------------------------------
 
         try:
-
-            PDFLoader(
-                max_pages=0
-            )
-
-            raise AssertionError(
-                "max_pages=0 did not raise."
-            )
-
+            PDFLoader(max_pages=0)
+            raise AssertionError("max_pages=0 did not raise.")
         except ValueError:
             pass
 
         try:
-
-            PDFLoader(
-                max_pages="10"  # type: ignore
-            )
-
-            raise AssertionError(
-                "String max_pages did not raise."
-            )
-
+            PDFLoader(max_pages="10")  # type: ignore
+            raise AssertionError("String max_pages did not raise.")
         except TypeError:
             pass
 
@@ -694,20 +489,11 @@ def _run_tests() -> None:
         # Page limit
         # --------------------------------------------------------------
 
-        limited_loader = PDFLoader(
-            max_pages=1
-        )
+        limited_loader = PDFLoader(max_pages=1)
 
         try:
-
-            limited_loader.load(
-                pdf_path
-            )
-
-            raise AssertionError(
-                "Page limit did not raise."
-            )
-
+            limited_loader.load(pdf_path)
+            raise AssertionError("Page limit did not raise.")
         except ValueError:
             pass
 
@@ -715,30 +501,16 @@ def _run_tests() -> None:
         # Corrupt PDF
         # --------------------------------------------------------------
 
-        corrupt = (
-            root / "corrupt.pdf"
-        )
-
-        corrupt.write_bytes(
-            b"this is not a valid pdf"
-        )
+        corrupt = root / "corrupt.pdf"
+        corrupt.write_bytes(b"this is not a valid pdf")
 
         try:
-
-            loader.load(
-                corrupt
-            )
-
-            raise AssertionError(
-                "Corrupt PDF did not raise."
-            )
-
+            loader.load(corrupt)
+            raise AssertionError("Corrupt PDF did not raise.")
         except ValueError:
             pass
 
-    print(
-        "ALL PDF LOADER TESTS PASSED"
-    )
+    print("ALL PDF LOADER TESTS PASSED")
 
 
 if __name__ == "__main__":

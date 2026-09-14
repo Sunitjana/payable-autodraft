@@ -41,12 +41,16 @@ class ChartOfBooksMatcher:
     )
 
     NAME_KEYS = (
-        "company_name",
-        "companyName",
-        "business_unit_name",
-        "businessUnitName",
+        # Most-specific first: once parent context (e.g.
+        # company_name) is merged down into a child record (see
+        # _flatten_records), the least-specific name must not
+        # shadow the more specific one.
         "location_name",
         "locationName",
+        "business_unit_name",
+        "businessUnitName",
+        "company_name",
+        "companyName",
         "account_name",
         "accountName",
         "gl_name",
@@ -93,25 +97,71 @@ class ChartOfBooksMatcher:
 
     @classmethod
     def _flatten_records(cls, value: Any) -> List[Dict[str, Any]]:
+        """
+        Flatten a (possibly nested) master-data structure into a
+        list of matchable records.
+
+        For nested hierarchies (companies -> business_units ->
+        locations, as in the supplied chart_of_books.json), each
+        child record inherits its ancestors' *scalar* fields (e.g.
+        company_code/company_name) merged underneath its own
+        fields. Without this, no single flattened record would
+        ever carry company_code + business_unit_code +
+        location_code together, and a combined-identifier lookup
+        (as AUTODRAFT_SCHEMA.md requires for buyer.company_code /
+        business_unit_code / location_code) could never succeed
+        against real nested master data — only against an
+        already-flat, single-level record list.
+
+        A flat (non-nested) input list is unaffected: there is no
+        ancestor to inherit from, so behavior for that shape is
+        unchanged.
+        """
+
         records: List[Dict[str, Any]] = []
 
-        def walk(node: Any) -> None:
+        def scalar_fields(
+            node: Dict[str, Any],
+        ) -> Dict[str, Any]:
+            return {
+                key: val
+                for key, val in node.items()
+                if not isinstance(val, (dict, list))
+                and not (
+                    isinstance(key, str)
+                    and key.startswith("_")
+                )
+            }
+
+        def walk(
+            node: Any,
+            inherited: Dict[str, Any],
+        ) -> None:
+
             if isinstance(node, list):
                 for item in node:
-                    walk(item)
+                    walk(item, inherited)
                 return
 
             if not isinstance(node, dict):
                 return
 
-            if any(key in node for key in cls.RECORD_KEYS):
-                records.append(node)
+            merged = {
+                **inherited,
+                **scalar_fields(node),
+            }
+
+            if any(
+                key in merged
+                for key in cls.RECORD_KEYS
+            ):
+                records.append(merged)
 
             for child in node.values():
                 if isinstance(child, (dict, list)):
-                    walk(child)
+                    walk(child, merged)
 
-        walk(value)
+        walk(value, {})
         return records
 
     @staticmethod

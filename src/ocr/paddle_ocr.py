@@ -177,23 +177,39 @@ class PaddleOCRBackend:
             "pipeline_version": self.pipeline_version,
         }
 
-        if self.device:
-            kwargs["device"] = self.device
+        # Always pass an explicit device rather than omitting it.
+        # Leaving "device" unset lets PaddleOCR/PaddleX fall back to
+        # their own auto-detection, which raises a bare
+        # AssertionError in some environments (observed: PaddleX's
+        # parse_device() rejecting whatever it auto-selects when no
+        # PaddlePaddle GPU build is installed). Defaulting to "cpu"
+        # is always a valid, supported device string and matches
+        # what most installs actually have available; a real GPU
+        # can still be requested explicitly via PADDLE_DEVICE.
+        kwargs["device"] = self.device or "cpu"
 
         try:
             self._pipeline = PaddleOCRVL(
                 **kwargs
             )
 
-        except TypeError as exc:
+        except (TypeError, AssertionError) as exc:
 
-            # Some PaddleOCR installations may not accept device.
+            # Some PaddleOCR installations don't accept a "device"
+            # kwarg at all (TypeError), and some reject even an
+            # explicit "cpu" (AssertionError from PaddleX's own
+            # device parsing, depending on how it was built). Either
+            # way, retry once without specifying a device and let
+            # the installed library use whatever default it can
+            # actually support.
             if "device" in kwargs:
 
                 logger.warning(
-                    "PaddleOCRVL did not accept device=%s. "
-                    "Retrying without device.",
-                    self.device,
+                    "PaddleOCRVL did not accept "
+                    "device=%s (%s). Retrying "
+                    "without an explicit device.",
+                    kwargs["device"],
+                    type(exc).__name__,
                 )
 
                 kwargs.pop("device", None)

@@ -1,0 +1,6 @@
+{
+  "success": false,
+  "source_file": "INV-01.pdf",
+  "status": "DECLINED",
+  "reason": "No text could be extracted from document"
+}
