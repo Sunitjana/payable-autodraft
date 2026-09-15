@@ -1,6 +1,6 @@
 {
   "file": "INV-35.pdf",
-  "elapsed_s": 11.58,
+  "elapsed_s": 15.252,
   "ocr_errors": [],
   "groups": [
     {
@@ -35,7 +35,7 @@
         ]
       },
       "ocr_sources": [
-        "tesseract"
+        "tesseract-triage-fallback"
       ],
       "validation": {
         "master": {
