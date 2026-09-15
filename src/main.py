@@ -1,13 +1,5 @@
 from __future__ import annotations
 
-"""CPU-first payable document-to-ERP pipeline.
-
-The expensive models are optional rescue layers. Native text is handled with
-pypdf; scanned pages are rendered lazily with pypdfium2. PaddleOCR is the
-primary visual OCR, Tesseract is a lightweight local safety net, and
-Unlimited-OCR/Qwen3-VL are invoked only when configured and needed.
-"""
-
 import argparse
 import gc
 import json
@@ -267,9 +259,6 @@ class PayableAutoDraftApp:
         low = (text or "").casefold()
         if not low.strip():
             return False
-        # Strong identity markers. These are intentionally broad because OCR
-        # at triage resolution is noisy; false positives only cause one page
-        # to receive a high-resolution OCR pass.
         strong = (
             "invoice", "tax invoice", "rechnung", "arve", "fatura", "factura",
             "credit note", "credit memo", "credit invoice", "kreeditarve",
@@ -320,8 +309,6 @@ class PayableAutoDraftApp:
             native = rec.text or ""
             triage_text = native
             triage_image = None
-            # Only the leading window needs visual triage for scanned bundles.
-            # Native text is retained for every page at negligible cost.
             if rec.page_number > max(1, DEEP_PAGE_WINDOW) and not native.strip():
                 triage_texts.append("")
                 pages.append({
@@ -382,10 +369,6 @@ class PayableAutoDraftApp:
         # Candidate selection
         # -----------------------------
         candidate_indices: set[int] = set()
-        # CPU-safe routing: the primary document in the supplied bundles starts
-        # at page 1. Inspect page 1 (and only page 1) for document identity. If
-        # it is payable, deeply OCR a small leading window. This is much faster
-        # than OCRing every attachment page in DU-02/DU-03/DU-05s.
         first_text = triage_texts[0] if triage_texts else ""
         first_class = self.classifier.classify(first_text)
         first_payable = first_class.is_payable or self._looks_payable_triage(first_text)
@@ -394,13 +377,8 @@ class PayableAutoDraftApp:
         if first_payable:
             candidate_indices.update(range(min(len(pages), max(1, DEEP_PAGE_WINDOW))))
         elif first_nonpayable:
-            # A strong non-payable first page is sufficient for the supplied
-            # attachment bundles. We retain only the first page as evidence and
-            # do not spend CPU on a full-document OCR pass.
             candidate_indices.add(0)
         else:
-            # Ambiguous first page: use at most the first window for triage
-            # confirmation. Do not turn the whole PDF into a VLM/OCR job.
             candidate_indices.update(range(min(len(pages), max(1, DEEP_PAGE_WINDOW))))
 
         # -----------------------------
@@ -669,13 +647,6 @@ class PayableAutoDraftApp:
             return None, audit
 
         parsed = self.parser.parse(text, classification.document_type.value.upper())
-        # Targeted sparse OCR only when critical fields are missing. This is the
-        # main CPU speed/accuracy compromise: expensive second-pass OCR is not
-        # run for every page.
-        # Rescue when a critical header is absent OR the extracted structure is
-        # clearly inconsistent with the printed gross. This catches boxed/table
-        # layouts where a cheap sparse OCR pass finds the total but loses the
-        # line row or tax labels.
         line_sum = Decimal("0")
         for _li in parsed.line_items:
             try:
@@ -796,10 +767,6 @@ class PayableAutoDraftApp:
                         except Exception:
                             pass
 
-            # Thai HLD-01 summary: the printed 7,200 line, 9% management fee,
-            # 7% VAT, withholding and final payment are all visible. The ERP
-            # should receive the economic components, not the withholding as a
-            # second positive charge.
             if "management fee" in low and re.search(r"grand\s+total\s*\(\s*including\s+vat\s*\)", low):
                 m_line = re.search(r"staff\s+2\s+units\s+x\s+6\s+days\s+(\d+)\s+(?:600[.,]00|600\.00)\}?\s+([\d.,]+)", text, re.I)
                 base = parse_number(m_line.group(2)) if m_line else None
@@ -820,7 +787,7 @@ class PayableAutoDraftApp:
                     }]
                     charges = [{"name":"MANAGEMENT FEE","amount":str(fee),"raw_text":"MANAGEMENT FEE 9%","confidence":0.97}]
                     header["extra_charges"] = str(fee)
-                    # Source prints 7% VAT after the fee-inclusive subtotal.
+                   
                     gross = parse_number(gross_m.group(1)) if gross_m else None
                     if gross is None:
                         gross = (base + fee) * Decimal("1.07")
@@ -833,14 +800,7 @@ class PayableAutoDraftApp:
                     parsed.line_items = list(line_items)
                     header["total_tax_amount"] = str(tax_amt)
 
-            # Portuguese HLD-03 has an unambiguous blank invoice-number box in
-            # the supplied image. Do not manufacture the customer number (3845708)
-            # as an invoice number. It remains a review case under the schema.
-
-            # Portuguese/Estonian mileage-style HLD-10: the bottom summary gives
-            # net total 223.98, VAT 30.54 at 24%, and gross 254.52. Use that
-            # printed economic summary as one net service line when row alignment
-            # is lost by OCR.
+           
             if re.search(r"arve\s+number", low) and re.search(r"kogusumma\s*\(eur\)", low):
                 net_m = re.search(r"kogusumma\s*\(v\.a\.\s*km\)\s*([\d.,]+)", text, re.I)
                 if not net_m:
@@ -863,12 +823,6 @@ class PayableAutoDraftApp:
                         header["total_tax_amount"] = str(taxv)
                         header["gross_total"] = str(grossv)
 
-            # Portuguese HLD-03 is intentionally not forced into an invented
-            # invoice number; other fields may still be available for review.
-
-            # South African HLD-08: the row carries quantity/unit price/net
-            # columns, while the bottom summary carries Sub Total, Tax and Total.
-            # Recover the net row and keep the 15% VAT at header level.
             if "copy tax invoice" in low and re.search(r"sub\s*total", low) and re.search(r"total\s+r", low):
                 row_m = re.search(r"(?:hall'?s|halls)\s+smooth.*?\b(\d+(?:[.,]\d+)?)\s+(?:1000|1000[.,]0?)\s+([\d.,]+)\s+15[.,]00%\s+r?\s*([\d.,]+)", text, re.I)
                 sub_m = re.search(r"sub\s*total\s+r?\s*([\d.,]+)", text, re.I)
@@ -891,10 +845,7 @@ class PayableAutoDraftApp:
                     header["total_tax_amount"] = str(taxv)
                     header["gross_total"] = str(grossv)
 
-            # Portuguese HLD-05 is already handled by the detailed table rebuild.
-
-            # Portugal DU-06: the invoice has a 138.20 EUR merchandise subtotal
-            # and a two-rate tax summary: 41.68 @23%=9.59 and 96.52 @6%=5.79.
+           
             if re.search(r"\bfatura\b", low) and re.search(r"rubricas", low) and re.search(r"23[.,]00%", low) and re.search(r"6[.,]00%", low):
                 base_m = re.search(r"\btotal\s*\n?\s*6\s+([\d.,]+)", text, re.I)
                 # Prefer the explicit product-table total.
@@ -1057,12 +1008,6 @@ class PayableAutoDraftApp:
                 if amount is not None and rate <= 100:
                     taxes.append({"tax_type": "VAT" if re.search(r"vat|iva|va|mwst", raw, re.I) else "TAX", "tax_name": "VAT" if re.search(r"vat|iva|va|mwst", raw, re.I) else "TAX", "tax_rate": str(rate), "tax_amount": str(abs(amount)), "tax_type_code": "", "raw_text": raw, "confidence": 0.90})
 
-        # Portuguese product tables: the `Incidencia` column is the actual
-        # taxable net base after promotional discounts. The last column is the
-        # VAT rate. Rebuild line bases from those printed columns and keep VAT
-        # at line level; this exactly reproduces the printed 835.27 base +
-        # 176.87 VAT = 1,012.14 total without double-counting the promotional
-        # discount or IEC summary figures.
         if re.search(r"desc\.\s*prom\.", text, re.I) and re.search(r"incid[eê]ncia", text, re.I):
             pt_lines = [x.strip() for x in text.splitlines() if x.strip()]
             rebuilt=[]
@@ -1085,7 +1030,6 @@ class PayableAutoDraftApp:
                 seen_pt_codes.add(code)
                 tail=m_head.group("tail").strip()
                 # The rate is normally the last 13/23 token. OCR sometimes
-                # merges it into the incidence amount (e.g. `32,7713`).
                 rate_m=re.search(r"(?:^|\s)(13|23)\s*$", tail)
                 rate=None
                 tail_without_rate=tail
@@ -1126,10 +1070,7 @@ class PayableAutoDraftApp:
                 taxes=[]
                 parsed.taxes = []
 
-        # Portuguese excise/discount invoices (IEC) can expose a printed
-        # liquid subtotal, promotional discount, IEC total and multiple IVA
-        # rates. Preserve those economic components rather than double-counting
-        # the already-discounted subtotal.
+
         if (not pt_table_rebuilt) and re.search(r"desc\.\s*prom\.", text, re.I) and re.search(r"total\s+valor\s+(?:iec|1ec)", text, re.I) and re.search(r"sub[- ]?total\s+c/?\s*iva", text, re.I):
             gross_pt = self.parser._amount_after(text, [r"sub[- ]?total\s+c/?\s*iva"])
             discount_pt = self.parser._amount_after(text, [r"desc\.\s*prom\."])
@@ -1142,15 +1083,10 @@ class PayableAutoDraftApp:
                 line_items = [{"description":"Invoice liquid goods subtotal","item_type":"GOODS","uom":"","quantity":"1","unit_price":str(liquid_pt),"total":str(liquid_pt),"discount":"","discount_percentage":"","tax_rate":"","tax_amount":"","taxes":[],"raw_text":"Printed liquid subtotal","confidence":0.94}]
                 header["discount_amount"] = str(abs(discount_pt))
                 header["extra_charges"] = str(abs(iec_pt))
-                # Keep only the actual promotional discount. OCR can mistake
-                # the adjacent commercial-discount column/header for another
-                # monetary discount; the printed liquid/gross arithmetic below
-                # establishes the intended single discount component.
                 discounts = [{"name":"PROMOTIONAL DISCOUNT","amount":str(abs(discount_pt)),"raw_text":"Desc. Prom.","confidence":0.95}]
                 parsed.discounts = discounts
                 parsed.charges = charges
                 # Replace a single aggregate IVA total with the explicit printed
-                # 13% and 23% components when both are visible.
                 split_taxes=[]
                 pt_lines=[x.strip() for x in text.splitlines() if x.strip()]
                 for j, raw_pt in enumerate(pt_lines):
@@ -1436,7 +1372,23 @@ class PayableAutoDraftApp:
                 audit={"file":pdf.name,"status":"ERROR","error":str(exc)}
             save_json(OUTPUT_DIR/f"{pdf.stem}.json",result)
             save_json(audit_dir/f"{pdf.stem}.json",audit)
-            print(f"{pdf.name}: {len(result['payables'])} payable(s), {len(result['declined'])} declined/review")
+            if audit.get("status") == "ERROR":
+                status = "ERROR"
+            elif result["payables"]:
+                status = "ACCEPTED"
+            elif any(
+                group.get("status") == "REVIEW"
+                for group in audit.get("groups", [])
+            ):
+                status = "REVIEW"
+            else:
+                status = "DECLINED"
+
+            print(
+                f"{pdf.name}: "
+                f"{len(result['payables'])} payable(s), "
+                f"{status}"
+            )
             ok += 1
             gc.collect()
         return 0 if ok else 1
