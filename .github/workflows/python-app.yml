@@ -1,39 +1,152 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
-
-name: Python application
+name: Payable Auto-Draft CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
+      - master
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
+      - master
 
 permissions:
   contents: read
 
 jobs:
   build:
-
+    name: Python ${{ matrix.python-version }} - CPU
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.10"
+          - "3.11"
+          - "3.12"
+
+    env:
+      # ------------------------------------------------------------------
+      # CPU-FIRST CI CONFIGURATION
+      # Heavy AI/VLM models are intentionally disabled in CI.
+      # ------------------------------------------------------------------
+      PADDLE_ENABLED: "false"
+      PADDLE_DEVICE: "cpu"
+
+      UNLIMITED_OCR_ENABLED: "false"
+      UNLIMITED_OCR_MODE: "pipeline"
+
+      SUPERVISOR_ENABLED: "false"
+      SUPERVISOR_ON_CONFLICT: "false"
+
+      # Lightweight OCR fallback
+      TESSERACT_ENABLED: "true"
+      TESSERACT_PSM: "6"
+      TESSERACT_ALT_PSM: "11"
+
+      # CPU-friendly processing
+      OCR_DPI: "180"
+      TRIAGE_DPI: "72"
+      DEEP_PAGE_WINDOW: "2"
+
+      # Validation
+      OCR_CONFIDENCE_THRESHOLD: "0.80"
+      SUPERVISOR_CONFIDENCE_THRESHOLD: "0.90"
+      AMOUNT_TOLERANCE: "0.01"
+      ALLOW_INVENTED_MASTER_VALUES: "false"
+
+      # Evidence / logging
+      STORE_EVIDENCE: "true"
+      LOG_LEVEL: "INFO"
+
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.10"
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install flake8 pytest
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test with pytest
-      run: |
-        pytest
+      # ---------------------------------------------------------------
+      # Checkout
+      # ---------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ---------------------------------------------------------------
+      # Python
+      # ---------------------------------------------------------------
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      # ---------------------------------------------------------------
+      # System dependencies
+      # Tesseract is required by the CPU-first OCR fallback.
+      # ---------------------------------------------------------------
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr
+
+      # ---------------------------------------------------------------
+      # Python dependencies
+      # ---------------------------------------------------------------
+      - name: Upgrade pip
+        run: |
+          python -m pip install --upgrade pip
+
+      - name: Install project dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Install test dependencies
+        run: |
+          pip install pytest flake8
+
+      # ---------------------------------------------------------------
+      # Verify environment
+      # ---------------------------------------------------------------
+      - name: Verify Python
+        run: |
+          python --version
+          pip --version
+
+      - name: Verify Tesseract
+        run: |
+          tesseract --version
+
+      # ---------------------------------------------------------------
+      # Compile check
+      # ---------------------------------------------------------------
+      - name: Compile Python source
+        run: |
+          python -m compileall -q src
+
+      # ---------------------------------------------------------------
+      # Critical lint / syntax errors
+      # ---------------------------------------------------------------
+      - name: Lint - critical errors
+        run: |
+          flake8 src \
+            --count \
+            --select=E9,F63,F7,F82 \
+            --show-source \
+            --statistics
+
+      # ---------------------------------------------------------------
+      # General lint
+      # Warnings do not fail CI.
+      # ---------------------------------------------------------------
+      - name: Lint - general
+        run: |
+          flake8 src \
+            --count \
+            --exit-zero \
+            --max-complexity=10 \
+            --max-line-length=127 \
+            --statistics
+
+      # ---------------------------------------------------------------
+      # Tests
+      # ---------------------------------------------------------------
+      - name: Run tests
+        run: |
+          pytest -q
