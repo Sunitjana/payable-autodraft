@@ -1,6 +1,6 @@
-Payable Auto-Draft
+##Payable Auto-Draft
 
-## 1. What I eventually understood about the documents
+## What I eventually understood about the documents
 
 When I started, I thought this was mainly an OCR and field-extraction problem: read the PDF and find the invoice number, date, supplier, tax, and total.
 
@@ -16,7 +16,7 @@ That was the main shift in my understanding.
 
 ---
 
-## 2. What happens when the system sees an unfamiliar document?
+## What happens when the system sees an unfamiliar document?
 
 I did not want the system to work by adding a special rule for every document that failed. That can fit the open examples but is unlikely to work on a held-back document with a slightly different layout.
 
@@ -74,7 +74,7 @@ I think that is more realistic than claiming the system can automatically solve 
 
 ---
 
-## 3. Was there a document that could not be solved in the same way?
+## Was there a document that could not be solved in the same way?
 
 Yes. During testing, **INV-27** was a useful example.
 
@@ -91,8 +91,6 @@ I also found other difficult cases during testing where the system could extract
 So when a document asks for information that the page does not provide, or when the available evidence conflicts, the system should not manufacture an answer. It should expose the uncertainty through `REVIEW` or `DECLINED`, depending on the document decision.
 
 ---
-
-## 4. Engineering approach and problem-solving mindset
 
 My approach was iterative:
 
@@ -133,7 +131,7 @@ Because of these limitations, I consider `REVIEW` an important part of the desig
 
 ---
 
-## 5. Why this design
+## Why this design
 
 The goal is not to produce the largest possible number of `ACCEPTED` documents.
 
